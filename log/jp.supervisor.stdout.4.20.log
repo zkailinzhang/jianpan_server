@@ -1,0 +1,440 @@
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 40, in <module>
+    %H:%M:%S",level=logging.DEBUG)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1895, in basicConfig
+    h = FileHandler(filename, mode)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1087, in __init__
+    StreamHandler.__init__(self, self._open())
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/logging/__init__.py", line 1116, in _open
+    return open(self.baseFilename, self.mode, encoding=self.encoding)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zkl/code/jianpan/log/serving.std.out'
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 2464, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 2450, in wsgi_app
+    response = self.handle_exception(e)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1867, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/_compat.py", line 39, in reraise
+    raise value
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 2447, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1952, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1821, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/_compat.py", line 39, in reraise
+    raise value
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1950, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1936, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/zkl/code/jianpan_server/serving.py", line 84, in predict
+    raise e
+  File "/home/zkl/code/jianpan_server/serving.py", line 69, in predict
+    if not os.path.exists(local_path):return(bad_request(402))
+  File "/home/zkl/code/jianpan_server/serving.py", line 261, in bad_request
+    return resp
+UnboundLocalError: local variable 'resp' referenced before assignment
+Loading the model...
+Traceback (most recent call last):
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 2464, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 2450, in wsgi_app
+    response = self.handle_exception(e)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1867, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/_compat.py", line 39, in reraise
+    raise value
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 2447, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1952, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1821, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/_compat.py", line 39, in reraise
+    raise value
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1950, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 1936, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/zkl/code/jianpan_server/serving.py", line 419, in evaluate
+    raise e
+  File "/home/zkl/code/jianpan_server/serving.py", line 390, in evaluate
+    evaluationId = request_json["evaluationId"]
+KeyError: 'evaluationId'
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8383, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8385, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8385, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8385, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8385, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8385, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8385, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+ * Serving Flask app "serving" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Traceback (most recent call last):
+  File "/home/zkl/code/jianpan_server/serving.py", line 894, in <module>
+    app.run(host="0.0.0.0", port=8385, debug=True)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/flask/app.py", line 990, in run
+    run_simple(host, port, self, **options)
+  File "/home/zkl/anaconda3/envs/tf12/lib/python3.7/site-packages/werkzeug/serving.py", line 1030, in run_simple
+    s.bind(server_address)
+OSError: [Errno 98] Address already in use
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
+  File "/home/zkl/code/jianpan_server/serving.py", line 45
+    "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
+                   ^
+SyntaxError: invalid syntax
