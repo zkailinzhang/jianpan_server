@@ -22,6 +22,7 @@ from enum import Enum
 import redis 
 import happybase
 from concurrent.futures import ThreadPoolExecutor
+import shutil
 
 
 executor = ThreadPoolExecutor(8)
@@ -55,6 +56,7 @@ logging.basicConfig(filename=logpath,filemode='a',format='%(asctime)s %(name)s:%
 MODELS_STATUS = {
 "id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
 '''
+MODELS_MAP={}
 
 # # "train_version":0123,"release_verison":0123}  
 #评分的线性回归
@@ -792,7 +794,13 @@ def train():
     except Exception as e:
         logging.info("******training modelid {},excep:{}".format(model_id,e))
         raise e
-        
+
+    MODELS_MAP[str(model_id)]['status'] = STATES.XUNLIANG_ZHONG #设置模型的状态为训练中
+    MODELS_MAP[str(model_id)]['model'] = None #此时的模型为空的
+    MODELS_MAP[str(model_id)]['model_id'] = model_id # 模型id为从页面传过来的id
+    MODELS_MAP[str(model_id)]['firstConfidence'] = None # 此时的第一置信度和第二置信度都为空
+    MODELS_MAP[str(model_id)]['secondConfidence'] = None
+
     executor.submit(train_task,local_path,assistKKS,mainKKS,model_id,local_path_model)
   
  
@@ -807,6 +815,37 @@ def train():
     resp.status_code = 200
     return resp
 
+
+#取消训练接口 参数为取消训练的模型id:model_id
+@app.route('/train_cancel', methods= ['post'])
+def train_cancel():
+    try:
+        request_json = request.get_json()
+        model_id = request_json["modelId"]
+        MODELS_MAP.pop(str[model_id]) #直接将模型的相关信息移除
+        # 将对应的model_id 的训练文件都删除
+        data_path = os.path.join(pathcwd, 'dataset/train/' + str(model_id) + '/')
+        print(data_path)
+        filelist = os.listdir(data_path)
+        for filename in filelist:
+            filePath = os.path.join(data_path,filename)
+            if os.path.isfile(filePath):
+                os.remove(filePath)
+        # os.remove(data_path) #权限问题 拒绝访问
+        shutil.rmtree(data_path)
+
+        # 这里应该加上停止训练进程的代码 但是目前没有找到好的解决办法
+
+    except Exception as e:
+        logging.info("******train cancel modelid {},excep:{}".format(model_id,e))
+        raise e
+    message = {
+                'status': True,
+                'message': '-->模型取消训练',
+        }
+    resp = jsonify(message)
+    resp.status_code = 200
+    return resp
 
 
 @app.route('/train_batch', methods=['POST'])
