@@ -16,7 +16,7 @@ import wget
 import json
 import requests
 import subprocess
-#from config import Config
+from config import Config
 import logging 
 from enum import Enum
 import redis 
