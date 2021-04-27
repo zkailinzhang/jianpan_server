@@ -796,6 +796,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
 
             model_id = eval(filename.split('_')[1]) 
             result_ids.append(model_id)
+            state = {"status":States.XUNLIAN_ZHONG,"modelid":model_id,"firstConfidence":0.95,"secondConfidence":0.98}
             
             logging.info("***start trainbatch modelid: {}".format(model_id))
             local_path_data = './dataset/train/' + str(model_id)+'/'
@@ -808,7 +809,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             
             if p.wait()==8:return(bad_request(505))
             local_path = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/', filename + '.csv')
-
+                    
             data = pd.read_csv(local_path)
 
             data = data.dropna()
@@ -828,9 +829,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             B2A = [True if i in kks["assistKKS"] else True for i in list(assistKKS)] 
             if sum(A2B) != len(assistKKS) or sum(B2A) != len(assistKKS) :continue
             
-            result_bools[i]=True
-            
-        
+            result_bools[i]=True       
             
             X = data.loc[:,tuple(assistKKS)]
 
@@ -842,6 +841,10 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             modelpath = local_path_model+'model.pkl'
             with open(modelpath, 'wb') as f:
                 pickle.dump(model, f)
+            state["model"] =   model
+            state["status"] = States.XL_WANCHENG
+            MODELS_STATUS[str(model_id)] = state 
+            
             logging.info("***finish trainbatch modelid: {}".format(model_id))
         
     except Exception as e:
@@ -871,6 +874,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
     resp = requests.post(Config.java_host_train_batch, \
                     data = json.dumps(message),\
                     headers= header)
+
 
 
 
