@@ -786,8 +786,8 @@ def train_cancel():
 def train_batch_task(modelIdKKS,datasetUrlList):
     
     try:
-        result_bool = [False] * len(datasetUrlList)
-        result_id = []
+        result_bools = [False] * len(datasetUrlList)
+        result_ids = []
         for i in range(len(datasetUrlList)):
             datasetUrl = datasetUrlList[i]
             print(datasetUrl)
@@ -795,7 +795,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             filename = datasetUrl[datasetUrl.rindex('/') +1:-4]
 
             model_id = eval(filename.split('_')[1]) 
-            result_id.append(model_id)
+            result_ids.append(model_id)
             
             logging.info("***start train modelid: {}".format(model_id))
             local_path_data = './dataset/train/' + str(model_id)+'/'
@@ -830,7 +830,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             B2A = [True if i in kks["assistKKS"] else True for i in list(assistKKS)] 
             if sum(A2B) != len(assistKKS) or sum(B2A) != len(assistKKS) :continue
             
-            result_bool[i]=True
+            result_bools[i]=True
             
         
             
@@ -863,13 +863,13 @@ def train_batch_task(modelIdKKS,datasetUrlList):
         #             headers= header)
         # raise e
     
-    logging.info("******train_batch finished result:\n{},\n{}".format(result_id,result_bool))
+    logging.info("******train_batch finished result:\n{},\n{}".format(result_ids,result_bools))
 
     message = {
         'status': True,
         'message': "批量训练完成",
-        "train_results": result_bool,
-        "train_models": result_id
+        "train_results": result_bools,
+        "train_models": result_ids
     }
     resp = requests.post(Config.java_host_train_batch, \
                     data = json.dumps(message),\
