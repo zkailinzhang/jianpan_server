@@ -291,7 +291,7 @@ def bad_request(error=400):
 def publish():
     request_json = request.get_json()
     if 'modelId' not in request_json.keys:
-        return(bad_request(401))
+        return(bad_request(501))
      
     model_id = request_json["modelId"]
     #若已经发布了，则直接返回模型已经发布过（实际上应该不存在这种情况吧，模型如果已经发布过，应该不会出现在模型未发布的列表中）
@@ -305,8 +305,10 @@ def publish():
     #         loaded_model = pickle.load(f)
     #
     # MODELS_STATUS[str(model_id)]['model'] = loaded_model
-    MODELS_STATUS[str(model_id)]['status'] = STATES.FABU
-
+    if str(model_id) in MODELS_STATUS.keys():
+        MODELS_STATUS[str(model_id)]['status'] = STATES.FABU
+    else:
+        return bad_request(502)
     message = {
 			'status': True,
 			'message': request.url+'-->模型发布成功',
