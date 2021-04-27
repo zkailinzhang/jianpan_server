@@ -797,7 +797,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             model_id = eval(filename.split('_')[1]) 
             result_ids.append(model_id)
             
-            logging.info("***start train modelid: {}".format(model_id))
+            logging.info("***start trainbatch modelid: {}".format(model_id))
             local_path_data = './dataset/train/' + str(model_id)+'/'
             local_path_model = './model/train/' + str(model_id)+'/'
               
@@ -808,10 +808,8 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             
             if p.wait()==8:return(bad_request(505))
             local_path = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/', filename + '.csv')
-            
-            logging.info("***start read data: {}".format(model_id))
+
             data = pd.read_csv(local_path)
-            logging.info("***start train model: {}".format(model_id))
 
             data = data.dropna()
             for col in data.columns[1:]:
@@ -844,8 +842,7 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             modelpath = local_path_model+'model.pkl'
             with open(modelpath, 'wb') as f:
                 pickle.dump(model, f)
-            
-            logging.info("***finish modelid: {}".format(model_id))
+            logging.info("***finish trainbatch modelid: {}".format(model_id))
         
     except Exception as e:
         logging.info("******training_batch modelid {},excep:{}".format(model_id,e))
@@ -892,7 +889,7 @@ def train_batch():
     
     message = {
 			'status': True,
-			'message': request.url+'-->模型批量开始训练',
+			'message': '-->模型批量开始训练',
 	}
 
     resp = jsonify(message)
