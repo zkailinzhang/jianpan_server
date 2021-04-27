@@ -783,70 +783,122 @@ def train_cancel():
     return resp
 
 
+def train_batch_task(modelIdKKS,datasetUrlList):
+    
+    try:
+        result_bool = [False] * len(datasetUrlList)
+        result_id = []
+        for i in range(len(datasetUrlList)):
+            datasetUrl = datasetUrlList[i]
+            print(datasetUrl)
+
+            filename = datasetUrl[datasetUrl.rindex('/') +1:-4]
+
+            model_id = eval(filename.split('_')[1]) 
+            result_id.append(model_id)
+            
+            logging.info("***start train modelid: {}".format(model_id))
+            local_path_data = './dataset/train/' + str(model_id)+'/'
+            local_path_model = './model/train/' + str(model_id)+'/'
+              
+            if not os.path.exists(local_path_data):   os.makedirs( local_path_data )
+            if not os.path.exists(local_path_model):    os.makedirs( local_path_model )  
+            
+            p= subprocess.Popen(['wget','-N',datasetUrl,'-P',local_path_data])
+            
+            if p.wait()==8:return(bad_request(505))
+            local_path = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/', filename + '.csv')
+            
+            logging.info("***start read data: {}".format(model_id))
+            data = pd.read_csv(local_path)
+            logging.info("***start train model: {}".format(model_id))
+
+            data = data.dropna()
+            for col in data.columns[1:]:
+                data = data[np.abs(data[col]-data[col].mean()) <= (3*data[col].std())]
+                
+            assistKKS = data.columns[2:]
+            mainKKS = data.columns[1]
+
+            #双向校验
+            if str(model_id) not in modelIdKKS.keys():continue
+            
+            kks = modelIdKKS[str(model_id)]
+            if kks["mainKKS"] != mainKKS:continue
+            
+            A2B = [True if i in list(assistKKS) else True for i in kks["assistKKS"]] 
+            B2A = [True if i in kks["assistKKS"] else True for i in list(assistKKS)] 
+            if sum(A2B) != len(assistKKS) or sum(B2A) != len(assistKKS) :continue
+            
+            result_bool[i]=True
+            
+        
+            
+            X = data.loc[:,tuple(assistKKS)]
+
+            y = data.loc[:,mainKKS]
+
+            X_const = sm.add_constant(X)
+            model = sm.OLS(y,X_const ).fit() 
+            
+            modelpath = local_path_model+'model.pkl'
+            with open(modelpath, 'wb') as f:
+                pickle.dump(model, f)
+            
+            logging.info("***finish modelid: {}".format(model_id))
+        
+    except Exception as e:
+        logging.info("******training_batch modelid {},excep:{}".format(model_id,e))
+        message = {
+        'status': False,
+        'message': "训练中异常excep: " + str(e),
+        #'data':prediction_series
+        "model_id": model_id
+ 
+        }
+        pass
+        #continue
+        # resp = requests.post(Config.java_host_train_batch, \
+        #             data = json.dumps(message),\
+        #             headers= header)
+        # raise e
+    
+    logging.info("******train_batch finished result:\n{},\n{}".format(result_id,result_bool))
+
+    message = {
+        'status': True,
+        'message': "批量训练完成",
+        "train_results": result_bool,
+        "train_models": result_id
+    }
+    resp = requests.post(Config.java_host_train_batch, \
+                    data = json.dumps(message),\
+                    headers= header)
+
+
+
+
 @app.route('/train_batch', methods=['POST'])
 def train_batch():
     
     request_json = request.get_json()
-    
-    #model_id = request_json["modelId"]
-    datasetUrl_list = request_json["datasetUrlList"]
-    #mainKKS = request_json["mainKKSlist"]
-    
-    #列表
-    #assistKKS = request_json["assistKKS"]
+    #{"id":{""}}
+    modelIdKKS = request_json["modelIdKKSDict"]
+    datasetUrlList = request_json["datasetUrlList"]
     
     #MODELS_MAP[str(model_id)]["status"] = STATES.training
+
+    train_batch_future = executor.submit(train_batch_task,modelIdKKS,datasetUrlList)
     
-    for datasetUrl in datasetUrl_list:
-        print(datasetUrl)
-
-        filename = datasetUrl[datasetUrl.rindex('/') +1:-4]
-
-        model_id = eval(filename.split('_')[1]) 
-        logging.info("***start train modelid: {}".format(model_id))
-        local_path_data = './dataset/train/' + str(model_id)+'/'
-        local_path_model = './model/train/' + str(model_id)+'/'
-
-        if not os.path.exists(local_path_data):   os.makedirs( local_path_data )
-        if not os.path.exists(local_path_model):    os.makedirs( local_path_model )  
-        
-        p= subprocess.Popen(['wget','-N',datasetUrl,'-P',local_path_data])
-        
-        if p.wait()==8:return(bad_request(505))
-        local_path = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/', filename + '.csv')
-        
-        logging.info("***start read data: {}".format(model_id))
-        data = pd.read_csv(local_path)
-        logging.info("***start train model: {}".format(model_id))
-
-        data = data.dropna()
-        for col in data.columns[1:]:
-            data = data[np.abs(data[col]-data[col].mean()) <= (3*data[col].std())]
-            
-        assistKKS = data.columns[2:]
-        mainKKS = data.columns[1]
-
-        X = data.loc[:,tuple(assistKKS)]
-
-        y = data.loc[:,mainKKS]
-
-        X_const = sm.add_constant(X)
-        model = sm.OLS(y,X_const ).fit() 
-        
-        modelpath = local_path_model+'model.pkl'
-        with open(modelpath, 'wb') as f:
-            pickle.dump(model, f)
-        
-        logging.info("***finish modelid: {}".format(model_id))
     message = {
 			'status': True,
-			'message': request.url+'-->模型训练成功',
+			'message': request.url+'-->模型批量开始训练',
 	}
 
     resp = jsonify(message)
     resp.status_code = 200
     return resp
-
+ 
    
   
 @app.route('/confidence', methods=['POST'])
