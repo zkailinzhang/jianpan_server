@@ -825,8 +825,8 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             kks = modelIdKKS[str(model_id)]
             if kks["mainKKS"] != mainKKS:continue
             
-            A2B = [True if i in list(assistKKS) else True for i in kks["assistKKS"]] 
-            B2A = [True if i in kks["assistKKS"] else True for i in list(assistKKS)] 
+            A2B = [True if i in list(assistKKS) else False for i in kks["assistKKS"]] 
+            B2A = [True if i in kks["assistKKS"] else False for i in list(assistKKS)] 
             if sum(A2B) != len(assistKKS) or sum(B2A) != len(assistKKS) :continue
             
             result_bools[i]=True       
