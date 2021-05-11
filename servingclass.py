@@ -171,7 +171,7 @@ class ModelService(object):
             data.append(request_json[params[i]]) 
         
         if len(data)==0 or '' in data:
-            return(bad_request(400))
+            return(self.bad_request(400))
         else:
             data =  np.expand_dims(data,1)       
             df = pd.DataFrame(dict(zip(columns,data)))
@@ -216,10 +216,6 @@ class ModelService(object):
         return (responses)
 
 
-
-
-
-
     def publish(self):
         request_json = request.get_json()
         if 'modelId' not in request_json.keys:
@@ -239,8 +235,6 @@ class ModelService(object):
         resp = jsonify(message)
         resp.status_code = 200
         return resp
-
-
 
 
     def publish_cancel(self):
@@ -263,7 +257,6 @@ class ModelService(object):
         resp = jsonify(message)
         resp.status_code = 200
         return resp
-
 
 
     def evaluate_task(self,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks):
@@ -343,7 +336,6 @@ class ModelService(object):
                         headers= Config.header) 
 
 
-
     def evaluate(self):
 
         try:
@@ -418,6 +410,7 @@ class ModelService(object):
         
         return (responses)
 
+
     def evaluate_cancel(self):
 
         request_json = request.get_json()       
@@ -448,8 +441,6 @@ class ModelService(object):
         resp = jsonify(message)
         resp.status_code = 200
         return resp
-
-
 
 
     def evaluate_renew_task(self,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks):
@@ -529,8 +520,6 @@ class ModelService(object):
                         headers= Config.header) 
 
 
-
-
     def evaluate_renew(self):
 
         try:
@@ -600,7 +589,6 @@ class ModelService(object):
         responses.status_code = 200
         
         return (responses)
-
 
 
     def train_task(self,state,local_path_data,assistKKS,mainKKS,model_id,local_path_model):
@@ -738,7 +726,6 @@ class ModelService(object):
         return resp
 
 
-
     def train_cancel(self):
 
         request_json = request.get_json()       
@@ -833,5 +820,26 @@ class ModelService(object):
         resp.status_code = 200
         return resp
 
-        
-    
+    # 趋势预测
+    def trend_predict(self):
+        request_json = request.get_json()
+
+        dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
+
+        # 将文件从文件服务器下载下来
+        local_path_trend = './trend/'
+        if os.path.exists(local_path_trend): os.makedirs(local_path_trend)
+        p = subprocess.Popen(['wget', '-N', dataUrl, '-P', local_path_trend])
+        filename = dataUrl[dataUrl.rindex('/') + 1:-4]  # 从url中解析出来文件名
+        if p.wait() == 8: return (self.bad_request(505))
+        local_path = os.path.join(pathcwd, 'trend/', filename + '.csv')  # 本地文件的路径
+
+        # 读取数据文件
+        data = pd.read_csv(local_path)
+        data = data.dropna()
+        columns = list(data.columns)
+        for col in columns:
+            X = data.loc[:, col]  # 此时已经获取了数据列
+
+        return 0
+
