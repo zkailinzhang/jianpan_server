@@ -16,7 +16,6 @@ import wget
 import json
 import requests
 import subprocess
-#from config import Config
 import logging 
 from enum import Enum
 import redis 
@@ -43,28 +42,16 @@ class States(Enum):
     FABU = 8
     FB_QUXIAO = 9  
     
-header = {'Content-Type': 'application/json','Accept': 'application/json'} 
-
 MODELS_STATUS = {}
 logpath = 'log/serving.std.out'
 logging.basicConfig(filename=logpath,filemode='a',format='%(asctime)s %(name)s:%(levelname)s:%(message)s',datefmt="%d-%m-%Y \
     %H:%M:%S",level=logging.DEBUG)
-'''
-#STATES_ENUM ={"初始化":0,"待训练":1,"训练中":2,'待发布':3,'已发布':4,"训练失败":5}
-# 状态管理，没有取消训练， 但有取消训练接口， 就直接remove，key，
-状态管理 有取消评估，接口，  状态置 训练完成  模型内存保存,异步执行的 pid 也可以吧该训练线程 kill
-状态管理 有取消发布，接口，  状态置 训练完成  模型内存保存，异步执行的 pid 也可以吧该训练线程 kill
 
-"status":States.XUNLIAN_ZHONG,"model":，"modelid":model_id,
-            "firstConfidence":0.95，"secondConfidence":0.98,"train_future":,"evaluate_future":
-MODELS_STATUS = {
-"id":{"status":,"model":，"modelid":,"firstConfidence"，"secondConfidence":,}
-'''
 
 # # "train_version":0123,"release_verison":0123}  
 #评分的线性回归
 
-
+header = {'Content-Type': 'application/json','Accept': 'application/json'} 
 
 @app.route('/predict', methods=['POST','GET'])
 def predict():
@@ -75,14 +62,21 @@ def predict():
         delta2 = request_json["secondConfidence"]
         logging.info("******predicting modelid {},".format(model_id))
  
-        if (delta1>=0.98 or delta1 <0.95 or delta2>=1.0 or delta2 <0.98):
+        if (delta1>=0.98 or delta1 <0.95 or delta2>=1.0 or delta2 <0.98): 
             logging.info("******predicting modelid {},excp:{}".format(model_id,"置信度异常"))
-            return (bad_request(504)) 
-         
-        if MODELS_STATUS[str(model_id)]["status"] != States.FABU : return(bad_request(506))
-        
-        if str(model_id) not in MODELS_STATUS.keys():return(bad_request(502))
-        loaded_model = MODELS_STATUS[str(model_id)]["model"] 
+            return (bad_request(5)) 
+
+        loaded_model = None
+        clf = 'model.pkl'
+        #if str(model_id) in request_json.keys():
+        #    loaded_model = request_json[str(model_id)]
+        local_path = './model/train/' + str(model_id)+'/'
+        if not os.path.exists(local_path):
+            logging.info("******predicting modelid {},excp:{}".format(model_id,"模型文件找不到"))
+            return(bad_request(502))
+        #if str(model_id) not in MODELS_MAP.keys():
+        with open(local_path + clf,'rb') as f:
+            loaded_model = pickle.load(f)
         
             
         #logging.info("******predicting summary {},".format(loaded_model.summary()  )) 
@@ -96,16 +90,14 @@ def predict():
 
         data=[]
         for i in range(1,len(params)):
-            
             data.append(request_json[params[i]]) 
         
         if len(data)==0 or '' in data:
+            logging.info("******predicting modelid {},excp:{}".format(model_id,"数据为空"))
             return(bad_request(400))
         else:
             data =  np.expand_dims(data,1)       
             df = pd.DataFrame(dict(zip(columns,data)))
-
-            print("The model has been loaded...doing predictions now...")
             
             df.insert(0,'const',1.0)
             df_const = df
@@ -144,6 +136,7 @@ def predict():
     except Exception as e:
         logging.info("******predicting modelid {},excp:{}".format(model_id,e))
         raise e 
+    
     return (responses)
 
 
@@ -304,6 +297,11 @@ def evaluate_task(delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,l
             "first_lower":list(d_pre.values),"second_upper":list(up_pre2.values),\
                 "second_lower":list(d_pre2.values)}
         #不带索引就 列值
+
+        #f = open('temp425.txt','w')
+        #f.write(str(pred_interval))
+        #f.close()
+
         prediction_series = json.dumps(pred_interval)
         re = redis.StrictRedis(host=Config.redis_host,port=Config.redis_port,db=Config.redis_db,password=Config.redis_password)
 
@@ -311,15 +309,17 @@ def evaluate_task(delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,l
 
         re.set(keys_redis,prediction_series)
     except Exception as e:
-        logging.info("******evaluatet task modelid {},excep:{}".format(model_id,e))
+        logging.info("******evaluate_task modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
-        'message': "评估中异常excep: " + str(e),
+        'message': "python评估中异常",
+        
         #'data':prediction_series
-        "model_id": model_id
+        "model_id": model_id,
+        "keys_redis": "evaluate_"+ str(evaluationId)+"_"+str(model_id) +"_"+ str(epochs) +"_"+ str(chunks)
 
         }
-        resp = requests.post(Config.java_host_evaluate, \
+        requests.post(Config.java_host_evaluate, \
                     data = json.dumps(message),\
                     headers= header)
 
@@ -333,8 +333,8 @@ def evaluate_task(delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,l
         "times_start": times_start
     }
     logging.info("******evaluate_task finished modelid {} ,{},".format(model_id,keys_redis))
-
-    resp = requests.post(Config.java_host_evaluate, \
+    #java 接口
+    requests.post(Config.java_host_evaluate, \
                     data = json.dumps(message),\
                     headers= header) 
 
@@ -346,7 +346,7 @@ def evaluate():
     try:
         request_json = request.get_json()  
         model_id = request_json["modelId"]
-        datasetUrl = request_json["dataUrl"]
+        dataUrl = request_json["dataUrl"]
         mainKKS = request_json["mainKKS"]
         assistKKS = request_json["assistKKS"]        
         delta1 = request_json["firstConfidence"]
@@ -357,21 +357,21 @@ def evaluate():
 
         clf = 'model.pkl'     
         
-        logging.info("******evaluating modelid {},".format(model_id))
-        
-        MODELS_STATUS[str(model_id)]["firstConfidence"] = delta1
-        MODELS_STATUS[str(model_id)]["secondConfidence"] = delta2
-            
-        if str(model_id) not in MODELS_STATUS.keys():return(bad_request(502))
-        loaded_model = MODELS_STATUS[str(model_id)]["model"]      
-        
+        logging.info("******evaluating modelid {}".format(model_id))
+        loaded_model = None
+        with open('./model/train/' + str(model_id)+'/' + clf,'rb') as f:
+            loaded_model = pickle.load(f)
         params  = loaded_model.params.index
         columns = list(params[1:])
+        #logging.info("******evaluating modelid {},assistKKS:{},colums:{},".format(model_id,assistKKS,columns))
+        #logging.info(loaded_model.summary())
+
         for col in columns:
             if col not in assistKKS:
-                return(bad_request(401))
+                logging.info("******evaluating modelid {},assistKKS:{},".format(model_id))
+                return(bad_request(501))
 
-        filename = datasetUrl[datasetUrl.rindex('/') +1:-4]  
+        filename = dataUrl[dataUrl.rindex('/') +1:-4]  
         local_path = os.path.join(pathcwd,'dataset/evaluate/' + str(model_id)+'/')
         if not os.path.exists(local_path):
             os.makedirs( local_path )
@@ -379,29 +379,29 @@ def evaluate():
         #哪个是绝对路径 哪个是文件名
         local_path_csv = os.path.join(local_path,filename +'.csv')
         #filename_ = wget.download(datasetUrl, out=local_path)
-        p = subprocess.Popen(['wget','-N',datasetUrl,'-P',local_path])
+        p=subprocess.Popen(['wget','-N',dataUrl,'-P',local_path])
         if p.wait()==8:return(bad_request(505))
            
     except Exception as e:
         logging.info("******evaluating modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
-        'message': "评估预处理异常excep: " + str(e),
+        'message': "python评估预处理异常",
         #'data':prediction_series
-        "model_id": model_id
-
+        "model_id": model_id,
+        "keys_redis": "evaluate_"+ str(evaluationId)+"_"+str(model_id) +"_"+ str(epochs) +"_"+ str(chunks)
         }
-        resp = requests.post(Config.java_host_evaluate, \
+
+        requests.post(Config.java_host_evaluate, \
                     data = json.dumps(message),\
                     headers= header)
+
         raise e
     
-    #state = {"status":States.PINGGU_ZHONG,"modelid":model_id,"firstConfidence":0.95,"secondConfidence":0.98}
-    MODELS_STATUS[str(model_id)]["status"] = States.PINGGU_ZHONG
-        
-    evaluate_future =  executor.submit(evaluate_task,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks)
-    MODELS_STATUS[str(model_id)+"_future"]["evaluate"]=evaluate_future 
+    
 
+    executor.submit(evaluate_task,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks)
+    
 
     message = {
         'status': True,
@@ -409,10 +409,13 @@ def evaluate():
         #'data':prediction_series
 
     }
-    logging.info("******evaluating asycio modelid {} ,".format(model_id))
-    responses = jsonify(message) 
-    responses.status_code = 200
+    logging.info("******evaluating modelid {} ,".format(model_id))
+
+
+    responses = jsonify(message)
     
+    responses.status_code = 200
+   
     return (responses)
 
 @app.route('/evaluate_cancel', methods=['POST'])
@@ -446,8 +449,6 @@ def evaluate_cancel():
     resp = jsonify(message)
     resp.status_code = 200
     return resp
-
-
 
 
 def evaluate_renew_task(delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks):
@@ -499,15 +500,15 @@ def evaluate_renew_task(delta2,evaluationId,delta1,local_path_csv,assistKKS,mode
 
         re.set(keys_redis,prediction_series)
     except Exception as e:
-        logging.info("******evaluating renew modelid {},excep:{}".format(model_id,e))
+        logging.info("******evaluate_renew_task modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
-        'message': "重新评估中异常excep: " + str(e),
-        #'data':prediction_series
-        "model_id": model_id
-
+        'message': "py重新评估中异常",
+        "model_id": model_id,
+        "keys_redis": "evaluate_"+ str(evaluationId)+"_"+str(model_id) +"_"+ str(epochs) +"_"+ str(chunks)
+                                  
         }
-        resp = requests.post(Config.java_host_evaluate, \
+        requests.post(Config.java_host_evaluate, \
                     data = json.dumps(message),\
                     headers= header)
 
@@ -520,12 +521,11 @@ def evaluate_renew_task(delta2,evaluationId,delta1,local_path_csv,assistKKS,mode
         "keys_redis": keys_redis,
         "times_start": times_start
     }
-    logging.info("******evaluate_task finished modelid {} ,{},".format(model_id,keys_redis))
-
-    resp = requests.post(Config.java_host_evaluate, \
+    logging.info("******evaluate_renew_task finished modelid {} ,{},".format(model_id,keys_redis))
+    #java 接口
+    requests.post(Config.java_host_evaluate, \
                     data = json.dumps(message),\
                     headers= header) 
-
 
 
 
@@ -535,7 +535,7 @@ def evaluate_renew():
     try:
         request_json = request.get_json()  
         model_id = request_json["modelId"]
-        datasetUrl = request_json["dataUrl"]
+        dataUrl = request_json["dataUrl"]
         mainKKS = request_json["mainKKS"]
         assistKKS = request_json["assistKKS"]        
         delta1 = request_json["firstConfidence"]
@@ -546,21 +546,17 @@ def evaluate_renew():
 
         clf = 'model.pkl'     
         
-        logging.info("******evaluating modelid {},".format(model_id))
-        
-        MODELS_STATUS[str(model_id)]["firstConfidence"] = delta1
-        MODELS_STATUS[str(model_id)]["secondConfidence"] = delta2
-        
-        if str(model_id) not in MODELS_STATUS.keys():return(bad_request(502))
-        loaded_model = MODELS_STATUS[str(model_id)]["model"]
-        
+        logging.info("******evaluating renew modelid {},".format(model_id))
+        loaded_model = None
+        with open('./model/train/' + str(model_id)+'/' + clf,'rb') as f:
+            loaded_model = pickle.load(f)
         params  = loaded_model.params.index
         columns = list(params[1:])
         for col in columns:
             if col not in assistKKS:
-                return(bad_request(401))
+                return(bad_request(501))
 
-        filename = datasetUrl[datasetUrl.rindex('/') +1:-4]  
+        filename = dataUrl[dataUrl.rindex('/') +1:-4]  
         local_path = os.path.join(pathcwd,'dataset/evaluate/' + str(model_id)+'/')
         if not os.path.exists(local_path):
             os.makedirs( local_path )
@@ -568,34 +564,40 @@ def evaluate_renew():
         #哪个是绝对路径 哪个是文件名
         local_path_csv = os.path.join(local_path,filename +'.csv')
         #filename_ = wget.download(datasetUrl, out=local_path)
-        p=subprocess.Popen(['wget','-N',datasetUrl,'-P',local_path])
+        p=subprocess.Popen(['wget','-N',dataUrl,'-P',local_path])
         if p.wait()==8:return(bad_request(505))
            
     except Exception as e:
-        logging.info("******evaluating modelid {},excep:{}".format(model_id,e))
+        logging.info("******evaluating renew modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
-        'message': "重新评估预处理异常excep: " + str(e),
-        "model_id": model_id
+        'message': "py评估预处理异常",
+        "model_id": model_id,
+        "keys_redis": "evaluate_"+ str(evaluationId)+"_"+str(model_id) +"_"+ str(epochs) +"_"+ str(chunks)
 
         }
-        resp = requests.post(Config.java_host_evaluate, \
+        requests.post(Config.java_host_evaluate, \
                     data = json.dumps(message),\
                     headers= header)
+
         raise e
     
-    MODELS_STATUS[str(model_id)]["status"] = States.PG_CX_ZHONG
     
-    evaluate_future =  executor.submit(evaluate_task,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks)
-    MODELS_STATUS[str(model_id)+"_future"]["evaluate"]=evaluate_future 
+
+    executor.submit(evaluate_renew_task,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks)
     
+
     message = {
         'status': True,
         'message': "重新评估开始",
         #'data':prediction_series
+
     }
     logging.info("******evaluating renew asycio modelid {} ,".format(model_id))
-    responses = jsonify(message)  
+
+
+    responses = jsonify(message)
+    
     responses.status_code = 200
     
     return (responses)
@@ -605,33 +607,35 @@ def evaluate_renew():
 def train_task(state,local_path_data,assistKKS,mainKKS,model_id,local_path_model):
     
     try:
-       
-        data = pd.read_csv(local_path_data)
+           
+        message = {
+        "status": False,
+		"message": '',
+	    "model_id": model_id
+        }
+    
+        
+        data = pd.read_csv(local_path_data)#,encoding = 'utf-8')#,error_bad_lines=False)
         if(len(data)==0):
-            message = {
-            'status': False,
-            'message': "训练数据为空",
-            "model_id": model_id
-    
-            }
-            resp = requests.post(Config.java_host_train,data = json.dumps(message),
+            message.update( {
+			"message": "训练数据为空"})
+            requests.post(Config.java_host_train,data = json.dumps(message),
                         headers= header)
-            #continue
-            #return(bad_request(508))
-            #break
-            #return 
+            
             raise ValueError("训练数据为空")
-        if(len(data)<=1*86400):
-            message = {
-            'status': False,
-            'message': "训练数据至少一天",
-            "model_id": model_id
-    
-            }
-            resp = requests.post(Config.java_host_train,data = json.dumps(message),
-                        headers= header)          
-            #return(bad_request(507))
+        if(len(data)<86400):
+            message.update( {
+			"message": "训练数据至少一天"})
+            requests.post(Config.java_host_train,data = json.dumps(message),
+                        headers= header)
             raise ValueError("训练数据至少一天")
+        
+        if not isinstance(assistKKS,list):
+            message.update( {
+			"message": "相关测点不是list类型"})
+            requests.post(Config.java_host_train,data = json.dumps(message),
+                        headers= header)
+            raise ValueError("相关测点不是list类型")
         
         X = data.loc[:,tuple(assistKKS)]
 
@@ -641,29 +645,30 @@ def train_task(state,local_path_data,assistKKS,mainKKS,model_id,local_path_model
         model = sm.OLS(y,X_const ).fit() 
         
         #model.conf_int(0.05)
-        logging.info("******train finished modelid {} ".format(model_id))
- 
+        logging.info("******train_task finished modelid {} ".format(model_id))
 
         filepath = local_path_model+'model.pkl'
         with open(filepath, 'wb') as f:
             pickle.dump(model, f)
     
     except Exception as e:
-        logging.info("******training modelid {},excep:{}".format(model_id,e))
+        logging.info("******training_task modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
-        'message': "训练中异常excep: " + str(e),
+        'message':"python训练中异常",
+        #'message': "训练中异常excep: " + str(e),
         #'data':prediction_series
         "model_id": model_id
  
         }
-        resp = requests.post(Config.java_host_train, \
+        requests.post(Config.java_host_train, \
                     data = json.dumps(message),\
                     headers= header)
+
         raise e
     
     
-    logging.info("******train finished modelid {} saved".format(model_id))
+    logging.info("******train_task finished modelid {} saved".format(model_id))
     state["model"] =   model
     state["status"] = States.XL_WANCHENG
     #如果已有key呢，会直接覆盖吗，还是要先remove 我记得
@@ -676,7 +681,7 @@ def train_task(state,local_path_data,assistKKS,mainKKS,model_id,local_path_model
         #'data':prediction_series
         "model_id": model_id
     }
-    resp = requests.post(Config.java_host, \
+    requests.post(Config.java_host_train, \
                     data = json.dumps(message),\
                     headers= header)
 
@@ -687,7 +692,7 @@ def train():
         request_json = request.get_json()
         
         model_id = request_json["modelId"]
-        datasetUrl = request_json["dataUrl"]
+        dataUrl = request_json["dataUrl"]
         mainKKS = request_json["mainKKS"]
         
         #列表
@@ -700,9 +705,9 @@ def train():
         if not os.path.exists(path_data):   os.makedirs( path_data )
         if not os.path.exists(path_model):    os.makedirs( path_model )  
         
-        p= subprocess.Popen(['wget','-N',datasetUrl,'-P',path_data])
+        p= subprocess.Popen(['wget','-N',dataUrl,'-P',path_data])
         if p.wait()==8:return(bad_request(505))
-        filename = datasetUrl[datasetUrl.rindex('/') +1:-4] 
+        filename = dataUrl[dataUrl.rindex('/') +1:-4] 
         local_path_data = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/'+filename + '.csv')
         
         local_path_model = os.path.join(pathcwd,'model/train/' + str(model_id)+'/')
@@ -710,29 +715,16 @@ def train():
         logging.info("******training modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
-        'message': "训练预处理异常excep: " + str(e),
-        #'data':prediction_series
+        'message': "python训练预处理异常",
         "model_id": model_id
 
         }
-        resp = requests.post(Config.java_host_train, \
+        requests.post(Config.java_host_train, \
                     data = json.dumps(message),\
                     headers= header)
-        raise e
-    # print(datasetUrl)
-    # filename = datasetUrl[datasetUrl.rindex('/') +1:-4]  
-    # local_path = './dataset/' + str(model_id)+'/'
-    # if not os.path.exists(local_path):
-    #     os.makedirs( local_path )
-    
-    # #哪个是绝对路径 哪个是文件名
-    # local_path = local_path+filename +'.csv'
-    # filename_ = wget.download(datasetUrl, out=local_path)
-    except Exception as e:
-        logging.info("******training modelid {},excep:{}".format(model_id,e))
+
         raise e
 
-    #state = dict()
     state = {"status":States.XUNLIAN_ZHONG,"modelid":model_id,"firstConfidence":0.95,"secondConfidence":0.98}
         
     train_future = executor.submit(train_task,state,local_path_data,assistKKS,mainKKS,model_id,local_path_model)
@@ -762,10 +754,7 @@ def train_cancel():
         #所以java那边，要确保，若页面取消了，状态就改为取消， 那就我这边即使回调显示训练完成，也不要考虑了，
     train_future = MODELS_STATUS[str(model_id)+"_"+"future"]["train"]
     MODELS_STATUS[str(model_id)]["status"] = States.XL_WANCHENG
-    
-    del MODELS_STATUS[str(model_id)] 
-    del MODELS_STATUS[str(model_id)+"_"+"future"] 
-    
+
     if train_future.cancel():
         message = {
                 'status': True,
@@ -824,7 +813,12 @@ def train_batch_task(modelIdKKS,datasetUrlList):
             
             kks = modelIdKKS[str(model_id)]
             if kks["mainKKS"] != mainKKS:continue
-            
+            '''
+            {'111': {'mainKKS': 'DCS4.WGGHOUTLGAST6',
+            'assistKKS': ['DCS4.40LCC30CG106XQ01', 'DCS4.40LCC30CT106']},
+            '222': {'mainKKS': 'DCS4.WGGHOUTLGAST6',
+            'assistKKS': ['DCS4.40LCC30CG106XQ01', 'DCS4.40LCC30CT106']}}
+            '''
             A2B = [True if i in list(assistKKS) else False for i in kks["assistKKS"]] 
             B2A = [True if i in kks["assistKKS"] else False for i in list(assistKKS)] 
             if sum(A2B) != len(assistKKS) or sum(B2A) != len(assistKKS) :continue
@@ -851,7 +845,8 @@ def train_batch_task(modelIdKKS,datasetUrlList):
         logging.info("******training_batch modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
-        'message': "训练中异常excep: " + str(e),
+        'message': "py批量训练中异常",
+        #'message': "训练中异常excep: " + str(e),
         #'data':prediction_series
         "model_id": model_id
  
@@ -874,7 +869,6 @@ def train_batch_task(modelIdKKS,datasetUrlList):
     resp = requests.post(Config.java_host_train_batch, \
                     data = json.dumps(message),\
                     headers= header)
-
 
 
 
@@ -927,4 +921,3 @@ def confidence():
 if __name__ == "__main__":
     # 将host设置为0.0.0.0，则外网用户也可以访问到这个服务
     app.run(host="0.0.0.0", port=8383, debug=True)
-
