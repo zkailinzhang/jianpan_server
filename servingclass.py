@@ -22,7 +22,7 @@ from enum import Enum
 import redis 
 #import happybase
 from concurrent.futures import ThreadPoolExecutor
-from config import Config 
+from config import Config
 
 executor = ThreadPoolExecutor(8)
 
@@ -841,5 +841,6 @@ class ModelService(object):
         for col in columns:
             X = data.loc[:, col]  # 此时已经获取了数据列
 
+        #朱炳旭拉取新代码
         return 0
 
