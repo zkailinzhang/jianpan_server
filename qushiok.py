@@ -50,7 +50,9 @@ p1 = np.poly1d(z1)
 
 plt.plot(t,x,label="原始值") 
 plt.plot(t,p1(t),label="原始值拟合") 
-
+plt.legend(loc='upper left')
+plt.title('fitting')
+plt.show()
 
 angle = math.atan(p1[1])*180/math.pi
 
