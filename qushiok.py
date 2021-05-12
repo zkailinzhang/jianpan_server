@@ -18,7 +18,6 @@ col1 = data["DCS1.10HFC30CT011"]
 col11 = [col1[i] for i in col1.index]
 
 col11 = []
-col11 = [(col1[i]-col1[i-1])/col1[i-1] for i in col1.index[1:]] 
 
 col11 = [(col1[i]-col1[i-1])/math.fabs(col1[i-1]) for i in col1.index[1:]] 
 
@@ -28,7 +27,7 @@ plt.show()
 
 col11.pop(np.argmax(col11))
 
-col11.pop(np.argmax(col11))
+col11.pop(np.argmin(col11))
 
 tmp = range(len(col11))
 plt.plot(tmp,col11) 
@@ -44,6 +43,7 @@ import pandas as pd
 
 t = np.linspace(0, 5, 100) 
 x = t + np.random.normal(size=100)
+#x = t - np.random.normal(size=100)
 
 z1 = np.polyfit(t,x,1) 
 p1 = np.poly1d(z1)
@@ -53,3 +53,6 @@ plt.plot(t,p1(t),label="原始值拟合")
 
 
 angle = math.atan(p1[1])*180/math.pi
+
+#todo 
+
