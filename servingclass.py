@@ -68,7 +68,6 @@ MODELS_STATUS = {
 
 class ModelService(object):
 
-
     def bad_request(self,error=400):
         
         message = {
@@ -132,77 +131,74 @@ class ModelService(object):
             resp.status_code =508  
         return resp
 
-       
+
     def predict(self):
         try:
-            request_json = request.get_json()   
+            request_json = request.get_json()
             model_id = request_json["modelId"]
             delta1 = request_json["firstConfidence"]
             delta2 = request_json["secondConfidence"]
             logging.info("******predicting modelid {},".format(model_id))
-    
-            if (delta1>=0.98 or delta1 <0.95 or delta2>=1.0 or delta2 <0.98): return (self.bad_request(504)) 
-            
-            #需要做判断吧
-            #MODELS_STATUS[str(model_id)]["firstConfidence"] == delta1
-            #MODELS_STATUS[str(model_id)]["secondConfidence"] == delta2
 
+            if (delta1 >= 0.98 or delta1 < 0.95 or delta2 >= 1.0 or delta2 < 0.98):
+                logging.info("******predicting modelid {},excp:{}".format(model_id, "置信度异常"))
+                return (self.bad_request(504))
 
-            print("Loading the model...")   
+            print("Loading the model...")
             if MODELS_STATUS[str(model_id)]["status"] != States.FABU : return(self.bad_request(506))
-            
+
             if str(model_id) not in MODELS_STATUS.keys():return(self.bad_request(502))
-            loaded_model = MODELS_STATUS[str(model_id)]["model"] 
-            
-                
-            #logging.info("******predicting summary {},".format(loaded_model.summary()  )) 
+            loaded_model = MODELS_STATUS[str(model_id)]["model"]
+
+
+            #logging.info("******predicting summary {},".format(loaded_model.summary()  ))
             params  = loaded_model.params.index
             columns = list(params[1:])
             for col in columns:
                 if col not in request_json.keys():
                     return(self.bad_request(501))
-                        
+
         except Exception as e:
             logging.info("******predicting modelid {},excp:{}".format(model_id,e))
-            raise e 
+            raise e
         data=[]
         for i in range(1,len(params)):
-            
-            data.append(request_json[params[i]]) 
-        
+
+            data.append(request_json[params[i]])
+
         if len(data)==0 or '' in data:
             return(self.bad_request(400))
         else:
-            data =  np.expand_dims(data,1)       
+            data =  np.expand_dims(data,1)
             df = pd.DataFrame(dict(zip(columns,data)))
 
             print("The model has been loaded...doing predictions now...")
-            
+
             df.insert(0,'const',1.0)
             df_const = df
             predictions = loaded_model.predict(df_const)
-                
+
             paras  = loaded_model.conf_int(Config.confidence)
             d_pre = paras[0][0]
             up_pre = paras[1][0]
-            
+
             for i in range(1,len(paras)):
-                d_pre += df_const.loc[0][i] * paras[0][i] 
-                up_pre += df_const.loc[0][i] * paras[1][i] 
+                d_pre += df_const.loc[0][i] * paras[0][i]
+                up_pre += df_const.loc[0][i] * paras[1][i]
 
             paras  = loaded_model.conf_int(Config.confidence_second)
             d_pre2 = paras[0][0]
             up_pre2 = paras[1][0]
-            
+
             for i in range(1,len(paras)):
-                d_pre2 += df_const.loc[0][i] * paras[0][i] 
-                up_pre2 += df_const.loc[0][i] * paras[1][i] 
+                d_pre2 += df_const.loc[0][i] * paras[0][i]
+                up_pre2 += df_const.loc[0][i] * paras[1][i]
             up_pre += up_pre* (Config.K1*delta1-Config.B1)
             up_pre2 += up_pre2 *(Config.K2*delta2-Config.B2)
             d_pre -=d_pre* (Config.K1*delta1-Config.B1)
             d_pre2-=d_pre2*(Config.K2*delta2-Config.B2)
             pred_interval = {"prediction":predictions.loc[0],"first_upper":up_pre,"first_lower":d_pre,"second_upper":up_pre2,"second_lower":d_pre2}
-                
+
             message = {
                 'status': True,
                 'message': "请求成功",
@@ -210,27 +206,27 @@ class ModelService(object):
             }
             logging.info("******predicting finished modelid {},".format(model_id))
             responses = jsonify(message)
-            
+
             responses.status_code = 200
-        
+
         return (responses)
 
 
     def publish(self):
         request_json = request.get_json()
         if 'modelId' not in request_json.keys:
-            return(self.bad_request(400))
-        
-        model_id = request_json["modelId"]   
-        
-        if str(model_id) not in MODELS_STATUS.keys():return(self.bad_request(502))
-            
-        MODELS_STATUS[str(model_id)]["status"] = States.FABU    
+            return (self.bad_request(400))
+
+        model_id = request_json["modelId"]
+
+        if str(model_id) not in MODELS_STATUS.keys(): return (self.bad_request(502))
+
+        MODELS_STATUS[str(model_id)]["status"] = States.FABU
         logging.info("******publish  modelid {} ,".format(model_id))
-        
+
         message = {
-                'status': True,
-                'message': '-->模型发布成功',
+            'status': True,
+            'message': '-->模型发布成功',
         }
         resp = jsonify(message)
         resp.status_code = 200
@@ -240,19 +236,19 @@ class ModelService(object):
     def publish_cancel(self):
         request_json = request.get_json()
         if 'modelId' not in request_json.keys:
-            return(self.bad_request(400))
-        
-        model_id = request_json["modelId"]   
-        
-        if str(model_id) not in MODELS_STATUS.keys():return(self.bad_request(502))
-            
-        MODELS_STATUS[str(model_id)]["status"] = States.XL_WANCHENG   
-        
+            return (self.bad_request(400))
+
+        model_id = request_json["modelId"]
+
+        if str(model_id) not in MODELS_STATUS.keys(): return (self.bad_request(502))
+
+        MODELS_STATUS[str(model_id)]["status"] = States.XL_WANCHENG
+
         logging.info("******publish_cancel  modelid {} ,".format(model_id))
-        
+
         message = {
-                'status': True,
-                'message': '-->模型取消发布成功',
+            'status': True,
+            'message': '-->模型取消发布成功',
         }
         resp = jsonify(message)
         resp.status_code = 200
@@ -443,151 +439,157 @@ class ModelService(object):
         return resp
 
 
-    def evaluate_renew_task(self,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks):
-        
+    def evaluate_renew_task(self,delta2, evaluationId, delta1, local_path_csv, assistKKS, model_id, loaded_model, epochs,chunks):
         try:
             logging.info("******evaluate_renew_task  modelid {} ,".format(model_id))
             data = pd.read_csv(local_path_csv)
-            X = data.loc[:,tuple(assistKKS)]
-            #y = data.loc[:,mainKKS]
+            X = data.loc[:, tuple(assistKKS)]
+            # y = data.loc[:,mainKKS]
             X_const = sm.add_constant(X)
-            times_start = data.iloc[:1,0].values[0]
+            times_start = data.iloc[:1, 0].values[0]
 
-            #df.insert(0,'const',1.0)
-            
-            #批量预测
+            # df.insert(0,'const',1.0)
+
+            # 批量预测
             predictions = loaded_model.predict(X_const)
             df_const = X_const
-            paras  = loaded_model.conf_int(Config.confidence)
+            paras = loaded_model.conf_int(Config.confidence)
             d_pre = paras[0][0]
             up_pre = paras[1][0]
-            
-            for i in range(1,len(paras)):
-                d_pre += df_const[assistKKS[i-1]] * paras[0][i] 
-                up_pre += df_const[assistKKS[i-1]] * paras[1][i] 
 
-            paras  = loaded_model.conf_int(Config.confidence_second)
+            for i in range(1, len(paras)):
+                d_pre += df_const[assistKKS[i - 1]] * paras[0][i]
+                up_pre += df_const[assistKKS[i - 1]] * paras[1][i]
+
+            paras = loaded_model.conf_int(Config.confidence_second)
             d_pre2 = paras[0][0]
             up_pre2 = paras[1][0]
-            
-            for i in range(1,len(paras)):
-                d_pre2 += df_const[assistKKS[i-1]] * paras[0][i] 
-                up_pre2 += df_const[assistKKS[i-1]] * paras[1][i] 
 
-            up_pre += (Config.K1*delta1-Config.B1)*up_pre
+            for i in range(1, len(paras)):
+                d_pre2 += df_const[assistKKS[i - 1]] * paras[0][i]
+                up_pre2 += df_const[assistKKS[i - 1]] * paras[1][i]
 
-            up_pre2 += up_pre2 *(Config.K2*delta2-Config.B2)
-            d_pre -=d_pre* (Config.K1*delta1-Config.B1)
-            d_pre2-=d_pre2*(Config.K2*delta2-Config.B2)
+            up_pre += (Config.K1 * delta1 - Config.B1) * up_pre
 
+            up_pre2 += up_pre2 * (Config.K2 * delta2 - Config.B2)
+            d_pre -= d_pre * (Config.K1 * delta1 - Config.B1)
+            d_pre2 -= d_pre2 * (Config.K2 * delta2 - Config.B2)
 
-            pred_interval = {"first_upper":list(up_pre.values),\
-                "first_lower":list(d_pre.values),"second_upper":list(up_pre2.values),\
-                    "second_lower":list(d_pre2.values)}
-            #不带索引就 列值
+            pred_interval = {"first_upper": list(up_pre.values), \
+                             "first_lower": list(d_pre.values), "second_upper": list(up_pre2.values), \
+                             "second_lower": list(d_pre2.values)}
+            # 不带索引就 列值
             prediction_series = json.dumps(pred_interval)
-            re = redis.StrictRedis(host=Config.redis_host,port=Config.redis_port,db=Config.redis_db,password=Config.redis_password)
+            re = redis.StrictRedis(host=Config.redis_host, port=Config.redis_port, db=Config.redis_db,
+                                   password=Config.redis_password)
 
-            keys_redis = "evaluate_"+ str(evaluationId)+"_"+str(model_id) +"_"+ str(epochs) +"_"+ str(chunks)
+            keys_redis = "evaluate_" + str(evaluationId) + "_" + str(model_id) + "_" + str(epochs) + "_" + str(chunks)
 
-            re.set(keys_redis,prediction_series)
+            re.set(keys_redis, prediction_series)
         except Exception as e:
-            logging.info("******evaluating renew modelid {},excep:{}".format(model_id,e))
+            logging.info("******evaluate_renew_task modelid {},excep:{}".format(model_id, e))
             message = {
-            'status': False,
-            'message': "重新评估中异常excep: " + str(e),
-            #'data':prediction_series
-            "model_id": model_id
+                'status': False,
+                'message': "py重新评估中异常",
+                "model_id": model_id,
+                "keys_redis": "evaluate_" + str(evaluationId) + "_" + str(model_id) + "_" + str(epochs) + "_" + str(
+                    chunks)
 
             }
-            resp = requests.post(Config.java_host_evaluate, \
-                        data = json.dumps(message),\
-                        headers= Config.header)
+            requests.post(Config.java_host_evaluate, \
+                          data=json.dumps(message), \
+                          headers=Config.header)
 
             raise e
 
         message = {
             'status': True,
             'message': "重新评估完成",
-            #'data':prediction_series
+            # 'data':prediction_series
             "keys_redis": keys_redis,
             "times_start": times_start
         }
-        logging.info("******evaluate_task finished modelid {} ,{},".format(model_id,keys_redis))
-
-        resp = requests.post(Config.java_host_evaluate, \
-                        data = json.dumps(message),\
-                        headers= Config.header) 
+        logging.info("******evaluate_renew_task finished modelid {} ,{},".format(model_id, keys_redis))
+        # java 接口
+        requests.post(Config.java_host_evaluate, \
+                      data=json.dumps(message), \
+                      headers=Config.header)
 
 
     def evaluate_renew(self):
 
         try:
-            request_json = request.get_json()  
+            request_json = request.get_json()
             model_id = request_json["modelId"]
-            datasetUrl = request_json["dataUrl"]
+            dataUrl = request_json["dataUrl"]
             mainKKS = request_json["mainKKS"]
-            assistKKS = request_json["assistKKS"]        
+            assistKKS = request_json["assistKKS"]
             delta1 = request_json["firstConfidence"]
             delta2 = request_json["secondConfidence"]
             evaluationId = request_json["evaluationId"]
             epochs = request_json["epochs"]
             chunks = request_json["chunks"]
 
-            clf = 'model.pkl'     
-            
+            clf = 'model.pkl'
+
             logging.info("******evaluating modelid {},".format(model_id))
-            
+
             MODELS_STATUS[str(model_id)]["firstConfidence"] = delta1
             MODELS_STATUS[str(model_id)]["secondConfidence"] = delta2
-            
+
             if str(model_id) not in MODELS_STATUS.keys():return(self.bad_request(502))
             loaded_model = MODELS_STATUS[str(model_id)]["model"]
-            
+
             params  = loaded_model.params.index
             columns = list(params[1:])
             for col in columns:
                 if col not in assistKKS:
-                    return(self.bad_request(401))
+                    return (self.bad_request(501))
 
-            filename = datasetUrl[datasetUrl.rindex('/') +1:-4]  
-            local_path = os.path.join(pathcwd,'dataset/evaluate/' + str(model_id)+'/')
+            filename = dataUrl[dataUrl.rindex('/') + 1:-4]
+            local_path = os.path.join(pathcwd, 'dataset/evaluate/' + str(model_id) + '/')
             if not os.path.exists(local_path):
-                os.makedirs( local_path )
-            
-            #哪个是绝对路径 哪个是文件名
-            local_path_csv = os.path.join(local_path,filename +'.csv')
-            #filename_ = wget.download(datasetUrl, out=local_path)
-            p=subprocess.Popen(['wget','-N',datasetUrl,'-P',local_path])
-            if p.wait()==8:return(self.bad_request(505))
-            
+                os.makedirs(local_path)
+
+            # 哪个是绝对路径 哪个是文件名
+            local_path_csv = os.path.join(local_path, filename + '.csv')
+            # filename_ = wget.download(datasetUrl, out=local_path)
+            p = subprocess.Popen(['wget', '-N', dataUrl, '-P', local_path])
+            if p.wait() == 8: return (self.bad_request(505))
+
         except Exception as e:
-            logging.info("******evaluating modelid {},excep:{}".format(model_id,e))
+            logging.info("******evaluating renew modelid {},excep:{}".format(model_id, e))
             message = {
-            'status': False,
-            'message': "重新评估预处理异常excep: " + str(e),
-            "model_id": model_id
+                'status': False,
+                'message': "py评估预处理异常",
+                "model_id": model_id,
+                "keys_redis": "evaluate_" + str(evaluationId) + "_" + str(model_id) + "_" + str(epochs) + "_" + str(
+                    chunks)
 
             }
-            resp = requests.post(Config.java_host_evaluate, \
-                        data = json.dumps(message),\
-                        headers= Config.header)
+            requests.post(Config.java_host_evaluate, \
+                          data=json.dumps(message), \
+                          headers=Config.header)
+
             raise e
-        
+
         MODELS_STATUS[str(model_id)]["status"] = States.PG_CX_ZHONG
-        
+
         evaluate_future =  executor.submit(self.evaluate_renew_task,delta2,evaluationId,delta1,local_path_csv,assistKKS,model_id,loaded_model,epochs,chunks)
-        MODELS_STATUS[str(model_id)+"_future"]["evaluate"]=evaluate_future 
-        
+        MODELS_STATUS[str(model_id)+"_future"]["evaluate"]=evaluate_future
+
         message = {
             'status': True,
             'message': "重新评估开始",
-            #'data':prediction_series
+            # 'data':prediction_series
+
         }
         logging.info("******evaluating renew asycio modelid {} ,".format(model_id))
-        responses = jsonify(message)  
+
+        responses = jsonify(message)
+
         responses.status_code = 200
-        
+
         return (responses)
 
 
@@ -661,65 +663,53 @@ class ModelService(object):
     def train(self):
         try:
             request_json = request.get_json()
-            
-            model_id = request_json["modelId"]
-            datasetUrl = request_json["dataUrl"]
-            mainKKS = request_json["mainKKS"]
-            
-            #列表
-            assistKKS = request_json["assistKKS"]
-            
-            #MODELS_MAP[str(model_id)]["status"] = STATES.training
-            path_data = './dataset/train/' + str(model_id)+'/'
-            path_model = './model/train/' + str(model_id)+'/'
 
-            if not os.path.exists(path_data):   os.makedirs( path_data )
-            if not os.path.exists(path_model):    os.makedirs( path_model )  
-            
-            p= subprocess.Popen(['wget','-N',datasetUrl,'-P',path_data])
-            if p.wait()==8:return(self.bad_request(505))
-            filename = datasetUrl[datasetUrl.rindex('/') +1:-4] 
-            local_path_data = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/'+filename + '.csv')
-            
-            local_path_model = os.path.join(pathcwd,'model/train/' + str(model_id)+'/')
+            model_id = request_json["modelId"]
+            dataUrl = request_json["dataUrl"]
+            mainKKS = request_json["mainKKS"]
+
+            # 列表
+            assistKKS = request_json["assistKKS"]
+
+            # MODELS_MAP[str(model_id)]["status"] = STATES.training
+            path_data = './dataset/train/' + str(model_id) + '/'
+            path_model = './model/train/' + str(model_id) + '/'
+
+            if not os.path.exists(path_data):   os.makedirs(path_data)
+            if not os.path.exists(path_model):    os.makedirs(path_model)
+
+            p = subprocess.Popen(['wget', '-N', dataUrl, '-P', path_data])
+            if p.wait() == 8: return (self.bad_request(505))
+            filename = dataUrl[dataUrl.rindex('/') + 1:-4]
+            local_path_data = os.path.join(pathcwd, 'dataset/train/' + str(model_id) + '/' + filename + '.csv')
+
+            local_path_model = os.path.join(pathcwd, 'model/train/' + str(model_id) + '/')
         except Exception as e:
-            logging.info("******training modelid {},excep:{}".format(model_id,e))
+            logging.info("******training modelid {},excep:{}".format(model_id, e))
             message = {
-            'status': False,
-            'message': "训练预处理异常excep: " + str(e),
-            #'data':prediction_series
-            "model_id": model_id
+                'status': False,
+                'message': "python训练预处理异常",
+                "model_id": model_id
 
             }
-            resp = requests.post(Config.java_host_train, \
-                        data = json.dumps(message),\
-                        headers= Config.header)
-            raise e
-        # print(datasetUrl)
-        # filename = datasetUrl[datasetUrl.rindex('/') +1:-4]  
-        # local_path = './dataset/' + str(model_id)+'/'
-        # if not os.path.exists(local_path):
-        #     os.makedirs( local_path )
-        
-        # #哪个是绝对路径 哪个是文件名
-        # local_path = local_path+filename +'.csv'
-        # filename_ = wget.download(datasetUrl, out=local_path)
-        except Exception as e:
-            logging.info("******training modelid {},excep:{}".format(model_id,e))
+            requests.post(Config.java_host_train, \
+                          data=json.dumps(message), \
+                          headers=Config.header)
+
             raise e
 
-        #state = dict()
-        state = {"status":States.XUNLIAN_ZHONG,"modelid":model_id,"firstConfidence":0.95,"secondConfidence":0.98}
-            
-        train_future = executor.submit(self.train_task,state,local_path_data,assistKKS,mainKKS,model_id,local_path_model)
-        MODELS_STATUS[str(model_id)+"_future"] = {}
-        MODELS_STATUS[str(model_id)+"_future"]["train"]=train_future
-            
-        #MODELS_MAP[str(model_id)]["status"] = STATES.training_finish
-        
+        state = {"status": States.XUNLIAN_ZHONG, "modelid": model_id, "firstConfidence": 0.95, "secondConfidence": 0.98}
+
+        train_future = executor.submit(self.train_task, state, local_path_data, assistKKS, mainKKS, model_id,
+                                       local_path_model)
+        MODELS_STATUS[str(model_id) + "_future"] = {}
+        MODELS_STATUS[str(model_id) + "_future"]["train"] = train_future
+
+        # MODELS_MAP[str(model_id)]["status"] = STATES.training_finish
+
         message = {
-                'status': True,
-                'message': '-->模型开始训练',
+            'status': True,
+            'message': '-->模型开始训练',
         }
         resp = jsonify(message)
         resp.status_code = 200
@@ -728,28 +718,25 @@ class ModelService(object):
 
     def train_cancel(self):
 
-        request_json = request.get_json()       
+        request_json = request.get_json()
         model_id = request_json["modelId"]
-            
-            #若已经运行，线程有取消接口，若已经运行，就取消不了了，，那就会回调java，所以，
-            #所以这边不能完全保证，不再回调， 还是会回调，
-            #所以java那边，要确保，若页面取消了，状态就改为取消， 那就我这边即使回调显示训练完成，也不要考虑了，
-        train_future = MODELS_STATUS[str(model_id)+"_"+"future"]["train"]
+
+        # 若已经运行，线程有取消接口，若已经运行，就取消不了了，，那就会回调java，所以，
+        # 所以这边不能完全保证，不再回调， 还是会回调，
+        # 所以java那边，要确保，若页面取消了，状态就改为取消， 那就我这边即使回调显示训练完成，也不要考虑了，
+        train_future = MODELS_STATUS[str(model_id) + "_" + "future"]["train"]
         MODELS_STATUS[str(model_id)]["status"] = States.XL_WANCHENG
-        
-        del MODELS_STATUS[str(model_id)] 
-        del MODELS_STATUS[str(model_id)+"_"+"future"] 
-        
+
         if train_future.cancel():
             message = {
-                    'status': True,
-                    'message': '-->模型训练取消成功',
+                'status': True,
+                'message': '-->模型训练取消成功',
             }
             logging.info("******train cancel modelid {} success".format(model_id))
         else:
             message = {
-                    'status': False,
-                    'message': '-->模型训练取消失败',
+                'status': False,
+                'message': '-->模型训练取消失败',
             }
             logging.info("******train cancel modelid {} failed".format(model_id))
         resp = jsonify(message)
@@ -757,63 +744,120 @@ class ModelService(object):
         return resp
 
 
-    def train_batch(self):
-        
-        request_json = request.get_json()
-        
-        #model_id = request_json["modelId"]
-        datasetUrl_list = request_json["datasetUrlList"]
-        #mainKKS = request_json["mainKKSlist"]
-        
-        #列表
-        #assistKKS = request_json["assistKKS"]
-        
-        #MODELS_MAP[str(model_id)]["status"] = STATES.training
-        
-        for datasetUrl in datasetUrl_list:
-            print(datasetUrl)
+    def train_batch_task(self,modelIdKKS, datasetUrlList):
 
-            filename = datasetUrl[datasetUrl.rindex('/') +1:-4]
+        try:
+            result_bools = [False] * len(datasetUrlList)
+            result_ids = []
+            for i in range(len(datasetUrlList)):
+                datasetUrl = datasetUrlList[i]
+                print(datasetUrl)
 
-            model_id = eval(filename.split('_')[1]) 
-            logging.info("***start train modelid: {}".format(model_id))
-            local_path_data = './dataset/train/' + str(model_id)+'/'
-            local_path_model = './model/train/' + str(model_id)+'/'
+                filename = datasetUrl[datasetUrl.rindex('/') + 1:-4]
 
-            if not os.path.exists(local_path_data):   os.makedirs( local_path_data )
-            if not os.path.exists(local_path_model):    os.makedirs( local_path_model )  
-            
-            p= subprocess.Popen(['wget','-N',datasetUrl,'-P',local_path_data])
-            
-            if p.wait()==8:return(self.bad_request(505))
-            local_path = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/', filename + '.csv')
-            
-            logging.info("***start read data: {}".format(model_id))
-            data = pd.read_csv(local_path)
-            logging.info("***start train model: {}".format(model_id))
+                model_id = eval(filename.split('_')[1])
+                result_ids.append(model_id)
+                state = {"status": States.XUNLIAN_ZHONG, "modelid": model_id, "firstConfidence": 0.95,
+                         "secondConfidence": 0.98}
 
-            data = data.dropna()
-            for col in data.columns[1:]:
-                data = data[np.abs(data[col]-data[col].mean()) <= (3*data[col].std())]
-                
-            assistKKS = data.columns[2:]
-            mainKKS = data.columns[1]
+                logging.info("***start trainbatch modelid: {}".format(model_id))
+                local_path_data = './dataset/train/' + str(model_id) + '/'
+                local_path_model = './model/train/' + str(model_id) + '/'
 
-            X = data.loc[:,tuple(assistKKS)]
+                if not os.path.exists(local_path_data):   os.makedirs(local_path_data)
+                if not os.path.exists(local_path_model):    os.makedirs(local_path_model)
 
-            y = data.loc[:,mainKKS]
+                p = subprocess.Popen(['wget', '-N', datasetUrl, '-P', local_path_data])
 
-            X_const = sm.add_constant(X)
-            model = sm.OLS(y,X_const ).fit() 
-            
-            modelpath = local_path_model+'model.pkl'
-            with open(modelpath, 'wb') as f:
-                pickle.dump(model, f)
-            
-            logging.info("***finish modelid: {}".format(model_id))
+                if p.wait() == 8: return (self.bad_request(505))
+                local_path = os.path.join(pathcwd, 'dataset/train/' + str(model_id) + '/', filename + '.csv')
+
+                data = pd.read_csv(local_path)
+
+                data = data.dropna()
+                for col in data.columns[1:]:
+                    data = data[np.abs(data[col] - data[col].mean()) <= (3 * data[col].std())]
+
+                assistKKS = data.columns[2:]
+                mainKKS = data.columns[1]
+
+                # 双向校验
+                if str(model_id) not in modelIdKKS.keys(): continue
+
+                kks = modelIdKKS[str(model_id)]
+                if kks["mainKKS"] != mainKKS: continue
+                '''
+                {'111': {'mainKKS': 'DCS4.WGGHOUTLGAST6',
+                'assistKKS': ['DCS4.40LCC30CG106XQ01', 'DCS4.40LCC30CT106']},
+                '222': {'mainKKS': 'DCS4.WGGHOUTLGAST6',
+                'assistKKS': ['DCS4.40LCC30CG106XQ01', 'DCS4.40LCC30CT106']}}
+                '''
+                A2B = [True if i in list(assistKKS) else False for i in kks["assistKKS"]]
+                B2A = [True if i in kks["assistKKS"] else False for i in list(assistKKS)]
+                if sum(A2B) != len(assistKKS) or sum(B2A) != len(assistKKS): continue
+
+                result_bools[i] = True
+
+                X = data.loc[:, tuple(assistKKS)]
+
+                y = data.loc[:, mainKKS]
+
+                X_const = sm.add_constant(X)
+                model = sm.OLS(y, X_const).fit()
+
+                modelpath = local_path_model + 'model.pkl'
+                with open(modelpath, 'wb') as f:
+                    pickle.dump(model, f)
+                state["model"] = model
+                state["status"] = States.XL_WANCHENG
+                MODELS_STATUS[str(model_id)] = state
+
+                logging.info("***finish trainbatch modelid: {}".format(model_id))
+
+        except Exception as e:
+            logging.info("******training_batch modelid {},excep:{}".format(model_id, e))
+            message = {
+                'status': False,
+                'message': "py批量训练中异常",
+                # 'message': "训练中异常excep: " + str(e),
+                # 'data':prediction_series
+                "model_id": model_id
+
+            }
+            pass
+            # continue
+            # resp = requests.post(Config.java_host_train_batch, \
+            #             data = json.dumps(message),\
+            #             headers= header)
+            # raise e
+
+        logging.info("******train_batch finished result:\n{},\n{}".format(result_ids, result_bools))
+
         message = {
-                'status': True,
-                'message': request.url+'-->模型训练成功',
+            'status': True,
+            'message': "批量训练完成",
+            "train_results": result_bools,
+            "train_models": result_ids
+        }
+        resp = requests.post(Config.java_host_train_batch, \
+                             data=json.dumps(message), \
+                             headers=Config.header)
+
+
+    def train_batch(self):
+
+        request_json = request.get_json()
+        # {"id":{""}}
+        modelIdKKS = request_json["modelIdKKSDict"]
+        datasetUrlList = request_json["datasetUrlList"]
+
+        # MODELS_MAP[str(model_id)]["status"] = STATES.training
+
+        train_batch_future = executor.submit(self.train_batch_task, modelIdKKS, datasetUrlList)
+
+        message = {
+            'status': True,
+            'message': '-->模型批量开始训练',
         }
 
         resp = jsonify(message)
@@ -822,25 +866,36 @@ class ModelService(object):
 
     # 趋势预测
     def trend_predict(self):
-        request_json = request.get_json()
 
-        dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
+        try:
+            request_json = request.get_json()
 
-        # 将文件从文件服务器下载下来
-        local_path_trend = './trend/'
-        if os.path.exists(local_path_trend): os.makedirs(local_path_trend)
-        p = subprocess.Popen(['wget', '-N', dataUrl, '-P', local_path_trend])
-        filename = dataUrl[dataUrl.rindex('/') + 1:-4]  # 从url中解析出来文件名
-        if p.wait() == 8: return (self.bad_request(505))
-        local_path = os.path.join(pathcwd, 'trend/', filename + '.csv')  # 本地文件的路径
+            dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
 
+            # 将文件从文件服务器下载下来
+            local_path_trend = './trend/'
+            if not os.path.exists(local_path_trend): os.makedirs(local_path_trend)
+            p = subprocess.Popen(['wget', '-N', dataUrl, '-P', local_path_trend])
+            filename = dataUrl[dataUrl.rindex('/') + 1:-4]  # 从url中解析出来文件名
+            if p.wait() == 8: return (self.bad_request(505))
+            local_path = os.path.join(pathcwd, 'trend/', filename + '.csv')  # 本地文件的路径
+        except Exception as e:
+            logging.info("******predicting trend,exception {}".format(e))
+            raise e
         # 读取数据文件
         data = pd.read_csv(local_path)
-        data = data.dropna()
+        # 此时默认数据的第一列为时间序列,直接将数据第一列去除
+        data = data[data.columns[1:]]
         columns = list(data.columns)
         for col in columns:
-            X = data.loc[:, col]  # 此时已经获取了数据列
+            X = data.loc[:,col]  # 此时已经获取了数据列
+            X = X.dropna()
 
-        #朱炳旭拉取新代码
-        return 0
-
+            print(X[1]) #此处添加趋势判断的代码
+        message = {
+            'status': True,
+            'message': '-->趋势预测接口测试',
+        }
+        resp = jsonify(message)
+        resp.status_code = 200
+        return resp

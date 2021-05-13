@@ -64,7 +64,7 @@ def predict():
  
         if (delta1>=0.98 or delta1 <0.95 or delta2>=1.0 or delta2 <0.98): 
             logging.info("******predicting modelid {},excp:{}".format(model_id,"置信度异常"))
-            return (bad_request(5)) 
+            return (bad_request(504))
 
         loaded_model = None
         clf = 'model.pkl'
@@ -910,8 +910,8 @@ def confidence():
     #是在什么时候修改的，是在评估，是在发布后，
     #置信度，预测还要带上  
     loaded_model = None
-    if str(model_id) in MODELS_MAP.keys():
-        loaded_model = MODELS_MAP[str(model_id)]
+    # if str(model_id) in MODELS_MAP.keys():
+    #     loaded_model = MODELS_MAP[str(model_id)]
 
 
     loaded_model.conf_int(0.05)

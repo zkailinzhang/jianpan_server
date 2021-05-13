@@ -16,4 +16,4 @@ class Config:
     redis_port = 30144 #6379
     redis_db = 0
     redis_password = 123456
-    
+    header = {'Content-Type': 'application/json', 'Accept': 'application/json'}

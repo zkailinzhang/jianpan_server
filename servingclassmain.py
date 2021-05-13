@@ -22,9 +22,11 @@ def predict():
 def publish():
     return modelservice.predict()
 
+
 @app.route("/publish_cancel",methods=['POST','GET'])
 def publish_cancel():
     return modelservice.publish_cancel()
+
 
 @app.route("/evaluate",methods=['POST','GET'])
 def evaluate():
@@ -51,17 +53,19 @@ def train_batch():
     return modelservice.train_batch()
 
 
-
 @app.route("/train_cancel",methods=['POST','GET'])
 def train_cancel():
     return modelservice.train_cancel()
-
 
 
 @app.errorhandler(400)
 def bad_request():
     return modelservice.bad_request(400)
 
+
+@app.route("/trend_predict",methods=['POST','GET'])
+def trend_predent():
+    return modelservice.trend_predict()
 
 
 
