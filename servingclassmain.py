@@ -18,6 +18,7 @@ def predict():
     return modelservice.predict()
 
 
+
 @app.route("/publish",methods=['POST','GET'])
 def publish():
     return modelservice.predict()
@@ -66,6 +67,11 @@ def bad_request():
 @app.route("/trend_predict",methods=['POST','GET'])
 def trend_predent():
     return modelservice.trend_predict()
+
+#趋势预测zbx
+@app.route("/trend_predict",methods=['POST','GET'])
+def trend_forecast():
+    return modelservice.trend_forecast()
 
 
 
