@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import math
 import pandas as pd
 import numpy as np 
 from flask import Flask, jsonify, request
@@ -897,5 +898,48 @@ class ModelService(object):
             'message': '-->趋势预测接口测试',
         }
         resp = jsonify(message)
+        resp.status_code = 200
+        return resp
+
+    # 趋势预测zbx
+    def trend_forecast(self):
+
+        try:
+            request_json = request.get_json()
+
+            dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
+
+            # 将文件从文件服务器下载下来
+            local_path_trend = './trend/'
+            if not os.path.exists(local_path_trend): os.makedirs(local_path_trend)
+            p = subprocess.Popen(['wget', '-N', dataUrl, '-P', local_path_trend])
+            filename = dataUrl[dataUrl.rindex('/') + 1:-4]  # 从url中解析出来文件名
+            if p.wait() == 8: return (self.bad_request(505))
+            local_path = os.path.join(pathcwd, 'trend/', filename + '.csv')  # 本地文件的路径
+        except Exception as e:
+            logging.info("******predicting trend,exception {}".format(e))
+            raise e
+        # 读取数据文件
+        da = pd.read_csv(local_path)
+        data = da[da.columns[1:]]
+        data_columns = len(data.columns[1:])  # 获取列数
+        dic = {}  #新建字典
+        for i in range(data_columns):
+            a = data.iloc[:, i]
+            tmp = range(len(a))
+            z1 = np.polyfit(tmp, a, 1)
+            coefficient = z1[0]  # 获取系数
+            angle = math.atan(coefficient) * 180 / math.pi
+            if angle >= 0.3:  #设置的角度大于30度时为上升趋势
+                key = data.columns[i]
+                dic[key] = "Trend up"
+            if angle <= -0.3: #设置的角度小于-30度时为下降趋势
+                key = data.columns[i]
+                dic[key] = "Trend down"
+            if angle >-0.3 & angle<0.3:#30度范围内趋势平稳
+                key = data.columns[i]
+                dic[key] = "Trend stable"
+
+        resp = jsonify(dic)
         resp.status_code = 200
         return resp
