@@ -28,6 +28,9 @@ tmp1 = range(len(col1))
 plt.plot(tmp,col11) 
 plt.show() 
 
+print(np.argmax(col11))
+print(np.max(col11))
+
 col11.pop(np.argmax (col11))
 
 col11.pop(np.argmin(col11))

@@ -64,16 +64,15 @@ def bad_request():
     return modelservice.bad_request(400)
 
 
-@app.route("/trend_predict",methods=['POST','GET'])
-def trend_predent():
-    return modelservice.trend_predict()
-
 #趋势预测zbx
 @app.route("/trend_predict",methods=['POST','GET'])
-def trend_forecast():
-    return modelservice.trend_forecast()
+def trend_predict():
+    return modelservice.trend_predict()
 
 
+@app.route("/suddenChange_predict",methods=['POST','GET'])
+def suddenChange_predict():
+    return modelservice.suddenChangePredict()
 
 if __name__ == "__main__":
     # 将host设置为0.0.0.0，则外网用户也可以访问到这个服务

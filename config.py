@@ -17,3 +17,5 @@ class Config:
     redis_db = 0
     redis_password = 123456
     header = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    suddenChangeThreshold = 0.5
+    trendThreshold = 10

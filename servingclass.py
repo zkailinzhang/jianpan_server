@@ -865,14 +865,15 @@ class ModelService(object):
         resp.status_code = 200
         return resp
 
-    # 趋势预测
-    def trend_predict(self):
 
+    #突然变化判断
+    def suddenChangePredict(self):
         try:
             request_json = request.get_json()
 
             dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
-
+            #返回结果的数据List
+            resultList = []
             # 将文件从文件服务器下载下来
             local_path_trend = './trend/'
             if not os.path.exists(local_path_trend): os.makedirs(local_path_trend)
@@ -881,7 +882,7 @@ class ModelService(object):
             if p.wait() == 8: return (self.bad_request(505))
             local_path = os.path.join(pathcwd, 'trend/', filename + '.csv')  # 本地文件的路径
         except Exception as e:
-            logging.info("******predicting trend,exception {}".format(e))
+            logging.info("******sudden Change predict,exception {}".format(e))
             raise e
         # 读取数据文件
         data = pd.read_csv(local_path)
@@ -889,26 +890,54 @@ class ModelService(object):
         data = data[data.columns[1:]]
         columns = list(data.columns)
         for col in columns:
-            X = data.loc[:,col]  # 此时已经获取了数据列
-            X = X.dropna()
-
-            print(X[1]) #此处添加趋势判断的代码
+            dataColumn = data.loc[:,col]  # 此时已经获取了数据列
+            dataColumn = dataColumn.dropna()
+            #判断数据列是不是为空，如果为空的话就返回数据文件错误
+            if len(dataColumn) == 0:
+                self.bad_request(400)
+            resultMessage = self.suddenChangePredictFunc(dataColumn)
+            resultDic = {
+                'column': col,
+                'resultMessage': resultMessage
+            }
+            resultList.append(resultDic)
         message = {
             'status': True,
-            'message': '-->趋势预测接口测试',
+            'message': '-->数据突变',
+            'data': resultList
         }
         resp = jsonify(message)
         resp.status_code = 200
         return resp
 
+
+    #判断数据列是不是突然变化的函数
+    def suddenChangePredictFunc(self,dataColumn):
+        dataList = [dataColumn[i] for i in dataColumn.index]
+        #得到所有的偏离度
+        result = [(dataList[i]-dataList[i-1])/math.fabs(dataList[i-1]) for i in range(1,len(dataList))]
+        maxNum = np.max(result)
+        minNum = np.min(result)
+        if maxNum > Config.suddenChangeValue and minNum < -Config.suddenChangeValue:
+            return '同时存在趋势突然上升和趋势突然下降！'
+        elif maxNum > Config.suddenChangeValue:
+            return '趋势突然上升！'
+        elif minNum < -Config.suddenChangeValue :
+            return '趋势突然下降！'
+        else:
+            return '趋势保持平稳！'
+
+
     # 趋势预测zbx
-    def trend_forecast(self):
+    def trend_predict(self):
 
         try:
             request_json = request.get_json()
 
             dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
 
+            #返回结果的List
+            resultList = []
             # 将文件从文件服务器下载下来
             local_path_trend = './trend/'
             if not os.path.exists(local_path_trend): os.makedirs(local_path_trend)
@@ -923,23 +952,36 @@ class ModelService(object):
         da = pd.read_csv(local_path)
         data = da[da.columns[1:]]
         data_columns = len(data.columns[1:])  # 获取列数
-        dic = {}  #新建字典
         for i in range(data_columns):
             a = data.iloc[:, i]
             tmp = range(len(a))
             z1 = np.polyfit(tmp, a, 1)
             coefficient = z1[0]  # 获取系数
             angle = math.atan(coefficient) * 180 / math.pi
-            if angle >= 0.3:  #设置的角度大于30度时为上升趋势
-                key = data.columns[i]
-                dic[key] = "Trend up"
-            if angle <= -0.3: #设置的角度小于-30度时为下降趋势
-                key = data.columns[i]
-                dic[key] = "Trend down"
-            if angle >-0.3 & angle<0.3:#30度范围内趋势平稳
-                key = data.columns[i]
-                dic[key] = "Trend stable"
+            if angle >= Config.trendThreshold:  #设置的角度大于30度时为上升趋势
+                resultDic = {
+                    'column': data.columns[i],
+                    'resultMessage': "趋势上升！"
+                }
+                resultList.append(resultDic)
+            elif angle <= -Config.trendThreshold: #设置的角度小于-30度时为下降趋势
+                resultDic = {
+                    'column': data.columns[i],
+                    'resultMessage': "趋势下降！"
+                }
+                resultList.append(resultDic)
+            if angle > -Config.trendThreshold and angle< Config.trendThreshold:#30度范围内趋势平稳
+                resultDic = {
+                    'column': data.columns[i],
+                    'resultMessage': "趋势平稳！"
+                }
+                resultList.append(resultDic)
 
-        resp = jsonify(dic)
+        message = {
+            'status': True,
+            'message': '-->数据趋势变化',
+            'data': resultList
+        }
+        resp = jsonify(message)
         resp.status_code = 200
         return resp
