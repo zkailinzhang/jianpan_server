@@ -22,6 +22,9 @@ import logging
 from enum import Enum
 import redis 
 #import happybase
+from datetime import datetime
+from datetime import timedelta
+import time
 from concurrent.futures import ThreadPoolExecutor
 from config import Config
 
@@ -68,6 +71,10 @@ MODELS_STATUS = {
 
 
 class ModelService(object):
+
+    # 定义趋势判断是否停止的表示变量
+    suddenChangePredictFlag = True
+    TrendPredictFlag = True
 
     def bad_request(self,error=400):
         
@@ -866,14 +873,35 @@ class ModelService(object):
         return resp
 
 
-    #突然变化判断
+    #突然变化判断,要求传过来的CSV文件中只有两列数据 第一列为时间戳 第二列为数据
     def suddenChangePredict(self):
         try:
             request_json = request.get_json()
-
+            if 'dataUrl' not in request_json.keys():
+                return (self.bad_request(400))
             dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
-            #返回结果的数据List
-            resultList = []
+        except Exception as e:
+            logging.info("******sudden Change predict,exception {}".format(e))
+            raise e
+        #将趋势判断的标志置为true
+        self.suddenChangePredictFlag = True
+        #这里开启一个异步任务，来执行突变预测的过程 防止这个接口的函数一直在执行
+        suddenChangePredictFuture = executor.submit(self.suddenChangePredictTask,dataUrl)
+        message = {
+            'status': True,
+            'message': '-->数据突变预测',
+        }
+        resp = jsonify(message)
+        resp.status_code = 200
+        return resp
+
+
+    #判断数据突然变化的异步执行函数
+    def suddenChangePredictTask(self,dataUrl):
+        try:
+            # dataUrl = dataUrl # 获取需要预测趋势的数据文件
+            # 返回结果的数据List
+            # resultList = []
             # 将文件从文件服务器下载下来
             local_path_trend = './trend/'
             if not os.path.exists(local_path_trend): os.makedirs(local_path_trend)
@@ -884,31 +912,94 @@ class ModelService(object):
         except Exception as e:
             logging.info("******sudden Change predict,exception {}".format(e))
             raise e
+
         # 读取数据文件
-        data = pd.read_csv(local_path)
+        da = pd.read_csv(local_path)
+        # 获取时间列
+        dateSeries = list(da[da.columns[0]])
+
+        endTime = dateSeries[-1]
+        endTime = datetime.strptime(endTime, '%Y/%m/%d %H:%M')  # 获得时间类型的最后的时间
+        frontTime = endTime - timedelta(minutes=10)  # 计算时间类型的开始的时间
         # 此时默认数据的第一列为时间序列,直接将数据第一列去除
-        data = data[data.columns[1:]]
-        columns = list(data.columns)
-        for col in columns:
-            dataColumn = data.loc[:,col]  # 此时已经获取了数据列
-            dataColumn = dataColumn.dropna()
-            #判断数据列是不是为空，如果为空的话就返回数据文件错误
-            if len(dataColumn) == 0:
-                self.bad_request(400)
-            resultMessage = self.suddenChangePredictFunc(dataColumn)
-            resultDic = {
-                'column': col,
-                'resultMessage': resultMessage
-            }
-            resultList.append(resultDic)
+        data = da[da.columns[1]]
+        columnName = da.columns[1]
+        dataColumn = data.dropna()
+        if len(dataColumn) == 0: return (self.bad_request(400))
+        resultMessage = self.suddenChangePredictFunc(dataColumn)
+        lastData = list(dataColumn)[-1]
+        resultDic = {
+            'frontTime': str(frontTime),
+            'endTime': str(endTime),
+            'resultMessage': resultMessage
+        }
         message = {
             'status': True,
-            'message': '-->数据突变',
-            'data': resultList
+            'message': '-->数据突变判断',
+            'data': resultDic
         }
-        resp = jsonify(message)
-        resp.status_code = 200
-        return resp
+        resp = requests.post(Config.java_host_train_batch, \
+                             data=json.dumps(message), \
+                             headers=Config.header)
+        #将最后一个数据加入其中
+        dataList =[]
+        dataList.append(lastData)
+        while self.suddenChangePredictFlag:
+            frontTime = endTime
+            endTime = endTime + timedelta(seconds=1)
+            #我定义了一个函数，从redis中获取数据，函数中要执行的内容就需要凯霖哥来写了
+            redisData = self.getDataFromRedis(columnName=columnName,frontTime=frontTime,endTime=endTime) #时间间隔都是一秒钟 如果获取到数据的话就只有一个数据
+            if len(redisData)==0:
+                #程序睡眠一秒钟
+                time.sleep(1)
+                continue
+            else:
+                dataList.append(redisData[0])
+                resultMessage = self.suddenChangePredictFunc(dataList)
+                dataList.pop(0)
+                resultDic = {
+                    'frontTime': str(frontTime),
+                    'endTime': str(endTime),
+                    'resultMessage': resultMessage
+                }
+                message = {
+                    'status': True,
+                    'message': '-->数据突变判断',
+                    'data': resultDic
+                }
+                resp = requests.post(Config.java_host_train_batch, \
+                                     data=json.dumps(message), \
+                                     headers=Config.header)
+                time.sleep(1)
+
+        # columns = list(data.columns)
+        # for col in columns:
+        #     dataColumn = data.loc[:, col]  # 此时已经获取了数据列
+        #     dataColumn = dataColumn.dropna()
+        #     # 判断数据列是不是为空，如果为空的话就返回数据文件错误
+        #     if len(dataColumn) == 0:
+        #         self.bad_request(400)
+        #     resultMessage = self.suddenChangePredictFunc(dataColumn)
+        #     resultDic = {
+        #         'column': col,
+        #         'resultMessage': resultMessage
+        #     }
+        #     resultList.append(resultDic)
+
+        # message = {
+        #     'status': True,
+        #     'message': '-->数据突变',
+        #     'data': resultList
+        # }
+        # resp = jsonify(message)
+        # resp.status_code = 200
+        # return resp
+
+
+    #这个函数定义的是从redis中获取数据，给的参数为：测点的名称(或者叫数据项的名称) 和 起止时间 ,这个函数需要凯霖哥来写
+    def getDataFromRedis(self,columnName,frontTime,endTime):
+        redisDataList = []
+        return redisDataList
 
 
     #判断数据列是不是突然变化的函数
@@ -918,14 +1009,26 @@ class ModelService(object):
         result = [(dataList[i]-dataList[i-1])/math.fabs(dataList[i-1]) for i in range(1,len(dataList))]
         maxNum = np.max(result)
         minNum = np.min(result)
-        if maxNum > Config.suddenChangeValue and minNum < -Config.suddenChangeValue:
+        if maxNum > Config.suddenChangeThreshold and minNum < -Config.suddenChangeThreshold:
             return '同时存在趋势突然上升和趋势突然下降！'
-        elif maxNum > Config.suddenChangeValue:
+        elif maxNum > Config.suddenChangeThreshold:
             return '趋势突然上升！'
-        elif minNum < -Config.suddenChangeValue :
+        elif minNum < -Config.suddenChangeThreshold :
             return '趋势突然下降！'
         else:
             return '趋势保持平稳！'
+
+
+    #取消突变预测的函数
+    def suddenChangePredictCancel(self):
+        self.suddenChangePredictFlag = False
+        message = {
+            'status': True,
+            'message': '-->突变预测取消成功',
+        }
+        resp = jsonify(message)
+        resp.status_code = 200
+        return resp
 
 
     # 趋势预测zbx

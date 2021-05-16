@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import pandas as pd
+from datetime import datetime
+from datetime import timedelta
 
 # file = '/home/zkl/磨煤机爆燃.csv'
 file = './磨煤机爆燃.csv'
@@ -11,6 +13,18 @@ data = pd.read_csv(file)
 '''
 突升突降,主要还是要确定阈值
 '''
+#获取时间序列
+dateSerise = list(data[data.columns[0]])
+
+endTime = dateSerise[-1]
+#将时间字符串装换成时间类型
+endTime = datetime.strptime(endTime,'%Y/%m/%d %H:%M')
+print(endTime)
+frontTime = endTime - timedelta(minutes=10)
+print(str(frontTime))
+print(frontTime)
+print(type(frontTime))
+
 #去除时间戳列
 da = data[data.columns[1:]]
 
@@ -18,6 +32,9 @@ da = data[data.columns[1:]]
 col1 = data["DCS1.10HFC30CT011"]
 
 col11 = [col1[i] for i in col1.index]
+
+dataTest = col11[0:4]
+dataTest.pop(0)
 
 col11 = []
 

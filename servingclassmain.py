@@ -74,6 +74,10 @@ def trend_predict():
 def suddenChange_predict():
     return modelservice.suddenChangePredict()
 
+@app.route("/suddenChange_cancel",methods=['POST','GET'])
+def suddenChange_cancel():
+    return modelservice.suddenChangePredictCancel()
+
 if __name__ == "__main__":
     # 将host设置为0.0.0.0，则外网用户也可以访问到这个服务
     app.run(host="0.0.0.0", port=8383, debug=True)
