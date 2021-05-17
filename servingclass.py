@@ -1031,17 +1031,35 @@ class ModelService(object):
         return resp
 
 
-    # 趋势预测zbx
+
+
+
+    #趋势变化判断,要求传过来的CSV文件中只有两列数据 第一列为时间戳 第二列为数据
     def trend_predict(self):
+            try:
+                request_json = request.get_json()
+                if 'dataUrl' not in request_json.keys():
+                    return (self.bad_request(400))
+                dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
+            except Exception as e:
+                logging.info("******trend predict,exception {}".format(e))
+                raise e
+            # 将趋势判断的标志置为true
+            self.trend_predictFlag = True
+            # 这里开启一个异步任务，来执行突变预测的过程 防止这个接口的函数一直在执行
+            trend_predictFuture = executor.submit(self.trend_predictTask, dataUrl)
+            message = {
+                'status': True,
+                'message': '-->数据趋势预测',
+            }
+            resp = jsonify(message)
+            resp.status_code = 200
+            return resp
 
+
+    # 判断趋势变化的异步执行函数
+    def trend_predictTask(self, dataUrl):
         try:
-            request_json = request.get_json()
-
-            dataUrl = request_json["dataUrl"]  # 获取需要预测趋势的数据文件
-
-            #返回结果的List
-            resultList = []
-            # 将文件从文件服务器下载下来
             local_path_trend = './trend/'
             if not os.path.exists(local_path_trend): os.makedirs(local_path_trend)
             p = subprocess.Popen(['wget', '-N', dataUrl, '-P', local_path_trend])
@@ -1049,41 +1067,91 @@ class ModelService(object):
             if p.wait() == 8: return (self.bad_request(505))
             local_path = os.path.join(pathcwd, 'trend/', filename + '.csv')  # 本地文件的路径
         except Exception as e:
-            logging.info("******predicting trend,exception {}".format(e))
+            logging.info("******Trend predict,exception {}".format(e))
             raise e
         # 读取数据文件
         da = pd.read_csv(local_path)
-        data = da[da.columns[1:]]
-        data_columns = len(data.columns[1:])  # 获取列数
-        for i in range(data_columns):
-            a = data.iloc[:, i]
-            tmp = range(len(a))
-            z1 = np.polyfit(tmp, a, 1)
-            coefficient = z1[0]  # 获取系数
-            angle = math.atan(coefficient) * 180 / math.pi
-            if angle >= Config.trendThreshold:  #设置的角度大于30度时为上升趋势
-                resultDic = {
-                    'column': data.columns[i],
-                    'resultMessage': "趋势上升！"
-                }
-                resultList.append(resultDic)
-            elif angle <= -Config.trendThreshold: #设置的角度小于-30度时为下降趋势
-                resultDic = {
-                    'column': data.columns[i],
-                    'resultMessage': "趋势下降！"
-                }
-                resultList.append(resultDic)
-            if angle > -Config.trendThreshold and angle< Config.trendThreshold:#30度范围内趋势平稳
-                resultDic = {
-                    'column': data.columns[i],
-                    'resultMessage': "趋势平稳！"
-                }
-                resultList.append(resultDic)
+        # 获取时间列
+        dateSeries = list(da[da.columns[0]])
 
+        endTime = dateSeries[-1]
+        endTime = datetime.strptime(endTime, '%Y/%m/%d %H:%M')  # 获得时间类型的最后的时间
+        frontTime = endTime - timedelta(minutes=10)  # 计算时间类型的开始的时间
+        # 此时默认数据的第一列为时间序列,直接将数据第一列去除
+        data = da[da.columns[1]]
+        columnName = da.columns[1]
+        dataColumn = data.dropna()
+        if len(dataColumn) == 0: return (self.bad_request(400))
+        resultMessage = self.trend_predictFunc(dataColumn)
+        lastData = list(dataColumn)[-1]
+        resultDic = {
+            'frontTime': str(frontTime),
+            'endTime': str(endTime),
+            'resultMessage': resultMessage
+        }
         message = {
             'status': True,
-            'message': '-->数据趋势变化',
-            'data': resultList
+            'message': '-->数据趋势判断',
+            'data': resultDic
+        }
+        resp = requests.post(Config.java_host_train_batch, \
+                             data=json.dumps(message), \
+                             headers=Config.header)
+        # 将最后一个数据加入其中
+        dataList = []
+        dataList.append(lastData)
+        while self.trend_predictFlag:
+            frontTime = endTime
+            endTime = endTime + timedelta(seconds=1)
+            # 我定义了一个函数，从redis中获取数据，函数中要执行的内容就需要凯霖哥来写了
+            redisData = self.getDataFromRedis(columnName=columnName, frontTime=frontTime,
+                                              endTime=endTime)  # 时间间隔都是一秒钟 如果获取到数据的话就只有一个数据
+            if len(redisData) == 0:
+                # 程序睡眠一秒钟
+                time.sleep(1)
+                continue
+            else:
+                dataList.append(redisData[0])
+                resultMessage = self.suddenChangePredictFunc(dataList)
+                dataList.pop(0)
+                resultDic = {
+                    'frontTime': str(frontTime),
+                    'endTime': str(endTime),
+                    'resultMessage': resultMessage
+                }
+                message = {
+                    'status': True,
+                    'message': '-->数据趋势判断',
+                    'data': resultDic
+                }
+                resp = requests.post(Config.java_host_train_batch, \
+                                     data=json.dumps(message), \
+                                     headers=Config.header)
+                time.sleep(1)
+
+
+    #判断趋势变化的函数
+    def trend_predictFunc(self, dataColumn):
+        dataList = [dataColumn[i] for i in dataColumn.index]
+        # 得到所有的偏离度
+        tmp = range(len(dataList))
+        z1 = np.polyfit(tmp, dataList, 1)
+        coefficient = z1[0]  # 获取系数
+        angle = math.atan(coefficient) * 180 / math.pi
+        if angle >= Config.trendThreshold:  # 设置的角度大于30度时为上升趋势
+           return '趋势上升！'
+        elif angle <= -Config.trendThreshold:  # 设置的角度小于-30度时为下降趋势
+            return '趋势下降！'
+        if angle > -Config.trendThreshold and angle < Config.trendThreshold:  # 30度范围内趋势平稳
+            return '趋势平稳！'
+
+
+    #取消趋势预测的函数
+    def trend_predictCancel(self):
+        self.trend_predictFlag = False
+        message = {
+            'status': True,
+            'message': '-->突变预测取消成功',
         }
         resp = jsonify(message)
         resp.status_code = 200

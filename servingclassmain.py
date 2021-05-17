@@ -69,6 +69,10 @@ def bad_request():
 def trend_predict():
     return modelservice.trend_predict()
 
+@app.route("/trend_predictCancel",methods=['POST','GET'])
+def trend_predictCancel():
+    return modelservice.suddenChangePredictCancel()
+
 
 @app.route("/suddenChange_predict",methods=['POST','GET'])
 def suddenChange_predict():
