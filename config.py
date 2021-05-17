@@ -18,4 +18,16 @@ class Config:
     redis_password = 123456
     header = {'Content-Type': 'application/json', 'Accept': 'application/json'}
     suddenChangeThreshold = 0.5
-    trendThreshold = 10
+    trend_Threshold_times = 10
+    trendPredictFlag =False
+    QUSHI_MODELS_STATUS = {}
+    
+class Qushi(Enum):
+    
+    CHIXU_PING = 1
+    CHIXU_SHENG = 2
+    CHIXU_JIANG = 3
+    
+    TUBIAN_SHENG = 4
+    TUBIAN_JIANG = 5
+    TUBIAN_PING = 6
