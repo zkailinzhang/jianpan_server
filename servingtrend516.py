@@ -22,6 +22,11 @@ import redis
 #import happybase
 from concurrent.futures import ThreadPoolExecutor
 from config import Config,Qushi
+import math
+import time
+import time 
+import itertools
+
 
 executor = ThreadPoolExecutor(8)
 
@@ -369,7 +374,7 @@ def evaluate():
 
         for col in columns:
             if col not in assistKKS:
-                logging.info("******evaluating modelid {},assistKKS:{},".format(model_id))
+                logging.info("******evaluating modelid {},assistKKS:{},".format(model_id,assistKKS))
                 return(bad_request(501))
 
         filename = dataUrl[dataUrl.rindex('/') +1:-4]  
@@ -923,8 +928,8 @@ def confidence():
 
     
 
-def angle_func(x,y,model_id):
-    import math 
+def angle_func(x,y):
+ 
     z1 = np.polyfit(x, y, 1)
     coefficient = z1[1]  # 获取系数
     angle = math.atan(coefficient) * 180 / math.pi
@@ -933,19 +938,19 @@ def angle_func(x,y,model_id):
     elif angle <= -Config.trendThreshold: result = Qushi.CHIXU_JIANG.value
     else:result = Qushi.CHIXU_PING.value
     
-    return result
+    return result,angle
 
  
     
-def delta_func(cur_val,pre_val,model_id):
-    import math 
+def delta_func(cur_val,pre_val):
+ 
     delta = (cur_val-pre_val)/math.fabs(pre_val) 
     result = 0
     if delta >= Config.suddenChangeThreshold:  result = Qushi.TUBIAN_SHENG.value         
     elif delta <= -Config.suddenChangeThreshold: result = Qushi.TUBIAN_JIANG.value
     else: result = Qushi.TUBIAN_PING.value
     
-    return result
+    return result,delta
 
 def send_java(result,model_id):
     message = {
@@ -953,23 +958,24 @@ def send_java(result,model_id):
     'message': result,
     "model_id": model_id
     }
+
     requests.post(Config.java_host_trend, \
                 data = json.dumps(message),\
                 headers= header)  
   
 
-def trend_task(local_path,mainKKS,model_id):
-    import time 
-    import itertools
+
+def trend_task(local_path_data,mainKKS,model_id):
+
     
-    da = pd.read_csv(local_path)
+    da = pd.read_csv(local_path_data)
     #to kks 
     data = list(da[mainKKS])
     tmp = range(len(data))
     
-    result = angle_func(tmp,data,model_id)
+    result,angle = angle_func(tmp,data)
     if result!= 1:send_java(result,model_id)
-    
+    logging.info("******trending modelid {},angle:{},result:{} ".format(model_id,angle,Qushi(result)))
     
     pre_dataset = data[-600:]
     pre_index = range(len(pre_dataset))
@@ -977,8 +983,9 @@ def trend_task(local_path,mainKKS,model_id):
     cur_val = list(data)[-1]
     pre_val = list(data)[-2]
     
-    result = delta_func(cur_val,pre_val,model_id)
+    result,delta = delta_func(cur_val,pre_val)
     if result!= 6:send_java(result,model_id)
+    logging.info("******trending modelid {},delta:{},result:{} ".format(model_id,delta,Qushi(result)))
     
     dateSeries = list(da[da.columns[0]])
 
@@ -991,7 +998,7 @@ def trend_task(local_path,mainKKS,model_id):
 
     keys_redis = "REAL_TIME_VALUE:"+ mainKKS
 
-    redisDict  = eval(json.load(re.get(keys_redis)))
+    
     # {"kks":,"timestamp","value":}
     flag =True
     while(flag):
@@ -999,41 +1006,50 @@ def trend_task(local_path,mainKKS,model_id):
         if not flag:break
         time.sleep(1)
         
-        if redisDict["timestamp"] == curTime:continue
+        redisDict  = eval(json.loads(re.get(keys_redis)))
+        if redisDict["timestamp"] == curTime:
+            
+            continue
         curTime = redisDict["timestamp"]
-        value = redisDict["value"] 
-         
-        pre_dataset.pop(0)
-        pre_dataset.append(redisDict["value"])
+        value = eval(redisDict["value"])
 
-        rst = angle_func(pre_index,pre_dataset,model_id)
+        pre_dataset.pop(0)
+        pre_dataset.append(value)
+
+        rst,angle = angle_func(pre_index,pre_dataset)
         if rst!= 1:send_java(result,model_id)
         rstfive_angle.append(rst)
-        
+        logging.info("******trending modelid {},angle:{}, result:{}, rsthistory:{}".format(\
+            model_id,delta,Qushi(result),rstfive_angle))
+
         pre_val = cur_val
         cur_val = value
         
-        rst = delta_func(cur_val,pre_val,model_id)
+        rst,delta = delta_func(cur_val,pre_val)
         if rst!= 6:send_java(rst,model_id)
-        rstfive_delta.append(rst)
         
+        rstfive_delta.append(rst)
+        logging.info("******trending modelid {},delta:{},result:{},rsthistory:{} ".format( \
+            model_id,delta,Qushi(result),rstfive_delta))
+        
+        flag = Config.QUSHI_MODELS_STATUS[str(model_id)+"_flag"]
 
         for k,v in itertools.groupby(rstfive_delta):
-            if k==6 and len(list(v))>Config.trend_Threshold_times*6:
+            if k==6 and sum(list(v))>Config.trend_Threshold_times*6:
                 flag = False
                     
         for k,v in itertools.groupby(rstfive_angle):
-            if k==1 and len(list(v))>Config.trend_Threshold_times*1:
+            if k==1 and sum(list(v))>Config.trend_Threshold_times*1:
                 flag = False             
         
         time.sleep(1)
-        flag = Config.QUSHI_MODELS_STATUS[str(model_id)+"_flag"]
-
+        
+        logging.info("******trending logg {}".format(Config.QUSHI_MODELS_STATUS))
 
 
 @app.route('/trend_cancel', methods=['POST'])
 def trend_cancel(self):
-    import time
+    
     request_json = request.get_json()
     model_id = request_json["modelId"]
     flag = False 
@@ -1046,13 +1062,15 @@ def trend_cancel(self):
     resp = jsonify(message)
     resp.status_code = 200
     time.sleep(1)
+
+    logging.info("******trend_cancel modelid {}, ".format(model_id))
     return resp    
     
 
 @app.route('/trend', methods=['POST'])
 def trend():
     try:
-        import math
+        
         request_json = request.get_json()
 
         mainKKS = request_json["mainKKS"]
@@ -1066,24 +1084,22 @@ def trend():
         p= subprocess.Popen(['wget','-N',dataUrl,'-P',path_data])
         if p.wait()==8:return(bad_request(505))
         filename = dataUrl[dataUrl.rindex('/') +1:-4] 
-        local_path_data = os.path.join(pathcwd,'dataset/train/' + str(model_id)+'/'+filename + '.csv')
+        local_path_data = os.path.join(pathcwd,'dataset/trend/' + str(model_id)+'/'+filename + '.csv')
         
     except Exception as e:
-        logging.info("******training modelid {},excep:{}".format(model_id,e))
+        logging.info("******trending modelid {},excep:{}".format(model_id,e))
         message = {
         'status': False,
         'message': "python趋势预处理异常",
         "model_id": model_id
 
         }
-        requests.post(Config.java_host_trend, \
-                    data = json.dumps(message),\
-                    headers= header)
+        print(message)
 
         raise e
     flag = str(model_id)+"_flag"
     Config.QUSHI_MODELS_STATUS[flag] = True
-    trend_future = executor.submit(trend_task,state,local_path_data,assistKKS,mainKKS,model_id,local_path_model)
+    trend_future = executor.submit(trend_task,local_path_data,mainKKS,model_id)
     
  
     
