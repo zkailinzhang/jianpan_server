@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os 
+import os
+from enum import Enum
 
 class Config:
     K1 = 1.6667

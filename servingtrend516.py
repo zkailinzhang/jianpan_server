@@ -926,8 +926,9 @@ def confidence():
     
 
 
-    
 
+
+#返回拟合之后的角度和结果
 def angle_func(x,y):
  
     z1 = np.polyfit(x, y, 1)
@@ -941,7 +942,7 @@ def angle_func(x,y):
     return result,angle
 
  
-    
+# 计算偏离度和结果
 def delta_func(cur_val,pre_val):
  
     delta = (cur_val-pre_val)/math.fabs(pre_val) 
@@ -1048,7 +1049,7 @@ def trend_task(local_path_data,mainKKS,model_id):
 
 
 @app.route('/trend_cancel', methods=['POST'])
-def trend_cancel(self):
+def trend_cancel():
     
     request_json = request.get_json()
     model_id = request_json["modelId"]
