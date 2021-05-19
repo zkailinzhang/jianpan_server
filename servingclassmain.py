@@ -63,24 +63,13 @@ def train_cancel():
 def bad_request():
     return modelservice.bad_request(400)
 
-
-#趋势预测zbx
 @app.route("/trend_predict",methods=['POST','GET'])
 def trend_predict():
-    return modelservice.trend_predict()
+    return modelservice.trend()
 
-@app.route("/trend_predictCancel",methods=['POST','GET'])
+@app.route("/trend_cancel",methods=['POST','GET'])
 def trend_predictCancel():
-    return modelservice.suddenChangePredictCancel()
-
-
-@app.route("/suddenChange_predict",methods=['POST','GET'])
-def suddenChange_predict():
-    return modelservice.suddenChangePredict()
-
-@app.route("/suddenChange_cancel",methods=['POST','GET'])
-def suddenChange_cancel():
-    return modelservice.suddenChangePredictCancel()
+    return modelservice.trend_cancel()
 
 if __name__ == "__main__":
     # 将host设置为0.0.0.0，则外网用户也可以访问到这个服务

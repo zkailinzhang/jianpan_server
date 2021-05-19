@@ -26,7 +26,8 @@ from datetime import datetime
 from datetime import timedelta
 import time
 from concurrent.futures import ThreadPoolExecutor
-from config import Config
+from config import Config,Qushi
+import itertools
 
 executor = ThreadPoolExecutor(8)
 
@@ -85,6 +86,12 @@ class ModelService(object):
         })
             resp = jsonify(message)
             resp.status_code = 400
+        elif error == 500:
+            message.update({
+                'message': '-->python后台异常'
+            })
+            resp = jsonify(message)
+            resp.status_code = 500
         elif error ==501:
             message.update( {
                 'message': '-->请求参数不一致错误，请检查相关测点、模型ID、请求接口',
@@ -869,3 +876,199 @@ class ModelService(object):
         return resp
 
 
+    # 返回拟合之后的角度和结果
+    def angle_func(self,x, y):
+        x = sm.add_constant(x)
+        model = sm.OLS(y,x).fit()
+        # z1 = np.polyfit(x, y, 1)
+        para = model.params
+        coefficient = para[1]  # 获取系数
+        angle = math.atan(coefficient) * 180 / math.pi
+        result = 0
+        if angle >= Config.trendThreshold:
+            result = Qushi.CHIXU_SHENG.value
+        elif angle <= -Config.trendThreshold:
+            result = Qushi.CHIXU_JIANG.value
+        else:
+            result = Qushi.CHIXU_PING.value
+
+        return result, angle
+
+
+    # 计算偏离度和结果
+    def delta_func(self,cur_val, pre_val):
+        delta = (cur_val - pre_val) / math.fabs(pre_val)
+        result = 0
+        if delta >= Config.suddenChangeThreshold:
+            result = Qushi.TUBIAN_SHENG.value
+        elif delta <= -Config.suddenChangeThreshold:
+            result = Qushi.TUBIAN_JIANG.value
+        else:
+            result = Qushi.TUBIAN_PING.value
+
+        return result, delta
+
+
+    def send_java(self,result, model_id):
+        message = {
+            'status': True,
+            'message': result,
+            "model_id": model_id
+        }
+
+        requests.post(Config.java_host_trend, \
+                      data=json.dumps(message), \
+                      headers=Config.header)
+
+
+    def trend_task(self,local_path_data, mainKKS, model_id):
+
+        da = pd.read_csv(local_path_data)
+        # to kks
+        data = list(da[mainKKS])
+        tmp = range(len(data))
+
+        result, angle = self.angle_func(tmp, data)
+        if result != Qushi.CHIXU_PING: self.send_java(result, model_id)
+        logging.info("******trending modelid {},angle:{},result:{} ".format(model_id, angle, Qushi(result)))
+
+        pre_dataset = data[-600:]
+        pre_index = range(len(pre_dataset))
+
+        cur_val = list(data)[-1]
+        pre_val = list(data)[-2]
+
+        result, delta = self.delta_func(cur_val, pre_val)
+        if result != 6: self.send_java(result, model_id)
+        logging.info("******trending modelid {},delta:{},result:{} ".format(model_id, delta, Qushi(result)))
+
+        dateSeries = list(da[da.columns[0]])
+
+        curTime = dateSeries[-1]
+
+        rstfive_angle = list()
+        rstfive_delta = list()
+
+        re = redis.StrictRedis(host=Config.redis_host, port=Config.redis_port, db=Config.redis_db,
+                               password=Config.redis_password)
+
+        keys_redis = "REAL_TIME_VALUE:" + mainKKS
+
+        # 创建pubsub对象，该对象订阅一个频道并侦听新消息：
+        pubsub = re.pubsub()
+        pubsub.psubscribe({'__keyspace@0__:'+keys_redis})
+        message = pubsub.get_message()
+        # {"kks":,"timestamp":,"value":}
+
+        # 死循环,不停的接收订阅的通知
+        flag = True
+        while (flag):
+
+            if not flag: break
+            time.sleep(1)
+
+            message = pubsub.get_message()
+            if message == None:
+                continue
+            else:
+                if message['data'] == 'set': #当操作方法为更新数据时，才会给回响应
+                    # redisDict = eval(json.loads(re.get(keys_redis))) #在测试的时候json.load方法出错
+                    redisDict = eval(re.get(keys_redis))#这个方法就可以直接把值拿出来
+                    # if redisDict["timestamp"] == curTime:
+                    #     continue
+                    curTime = redisDict["timestamp"]
+                    value = eval(redisDict["value"])
+
+                    pre_dataset.pop(0)
+                    pre_dataset.append(value)
+
+                    rst, angle = self.angle_func(pre_index, pre_dataset)
+                    if rst != Qushi.CHIXU_PING: self.send_java(rst, model_id)
+                    rstfive_angle.append(rst)
+                    logging.info("******trending modelid {},angle:{}, result:{}, rsthistory:{}".format( \
+                        model_id, delta, Qushi(rst), rstfive_angle))
+
+                    pre_val = cur_val
+                    cur_val = value
+
+                    rst, delta = self.delta_func(cur_val, pre_val)
+                    if rst != Qushi.TUBIAN_PING: self.send_java(rst, model_id)
+
+                    rstfive_delta.append(rst)
+                    logging.info("******trending modelid {},delta:{},result:{},rsthistory:{} ".format( \
+                        model_id, delta, Qushi(rst), rstfive_delta))
+
+                    flag = Config.QUSHI_MODELS_STATUS[str(model_id) + "_flag"]
+
+                    for k, v in itertools.groupby(rstfive_delta):
+                        if k == 6 and sum(list(v)) > Config.trend_Threshold_times * 6:
+                            flag = False
+
+                    for k, v in itertools.groupby(rstfive_angle):
+                        if k == 1 and sum(list(v)) > Config.trend_Threshold_times * 1:
+                            flag = False
+
+                    time.sleep(1)
+
+                    logging.info("******trending logg {}".format(Config.QUSHI_MODELS_STATUS))
+
+
+    def trend(self):
+        try:
+
+            request_json = request.get_json()
+
+            mainKKS = request_json["mainKKS"]
+            dataUrl = request_json["dataUrl"]
+            model_id = request_json["modelId"]
+
+            path_data = './dataset/trend/' + str(model_id) + '/'
+
+            if not os.path.exists(path_data):   os.makedirs(path_data)
+
+            p = subprocess.Popen(['wget', '-N', dataUrl, '-P', path_data])
+            if p.wait() == 8: return (self.bad_request(505))
+            filename = dataUrl[dataUrl.rindex('/') + 1:-4]
+            local_path_data = os.path.join(pathcwd, 'dataset/trend/' + str(model_id) + '/' + filename + '.csv')
+
+        except Exception as e:
+            logging.info("******trending modelid {},excep:{}".format(model_id, e))
+            message = {
+                'status': False,
+                'message': "python趋势预测异常",
+                "model_id": model_id
+
+            }
+            resp = jsonify(message)
+            resp.status_code = 500
+            return resp
+        flag = str(model_id) + "_flag"
+        Config.QUSHI_MODELS_STATUS[flag] = True
+        trend_future = executor.submit(self.trend_task, local_path_data, mainKKS, model_id)
+
+        message = {
+            'status': True,
+            'message': '-->开始趋势AI监测',
+        }
+        resp = jsonify(message)
+        resp.status_code = 200
+        return resp
+
+
+    def trend_cancel(self):
+
+        request_json = request.get_json()
+        model_id = request_json["modelId"]
+        flag = False
+        Config.QUSHI_MODELS_STATUS[str(model_id) + "_flag"] = flag
+
+        message = {
+            'status': True,
+            'message': 'AI趋势监测取消',
+        }
+        resp = jsonify(message)
+        resp.status_code = 200
+        time.sleep(1)
+
+        logging.info("******trend_cancel modelid {}, ".format(model_id))
+        return resp

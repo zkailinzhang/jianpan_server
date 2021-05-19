@@ -1018,20 +1018,20 @@ def trend_task(local_path_data,mainKKS,model_id):
         pre_dataset.append(value)
 
         rst,angle = angle_func(pre_index,pre_dataset)
-        if rst!= 1:send_java(result,model_id)
+        if rst!= Qushi.CHIXU_PING:send_java(rst,model_id)
         rstfive_angle.append(rst)
         logging.info("******trending modelid {},angle:{}, result:{}, rsthistory:{}".format(\
-            model_id,delta,Qushi(result),rstfive_angle))
+            model_id,delta,Qushi(rst),rstfive_angle))
 
         pre_val = cur_val
         cur_val = value
         
         rst,delta = delta_func(cur_val,pre_val)
-        if rst!= 6:send_java(rst,model_id)
+        if rst!= Qushi.TUBIAN_PING:send_java(rst,model_id)
         
         rstfive_delta.append(rst)
         logging.info("******trending modelid {},delta:{},result:{},rsthistory:{} ".format( \
-            model_id,delta,Qushi(result),rstfive_delta))
+            model_id,delta,Qushi(rst),rstfive_delta))
         
         flag = Config.QUSHI_MODELS_STATUS[str(model_id)+"_flag"]
 
