@@ -954,10 +954,12 @@ class ModelService(object):
 
         keys_redis = "REAL_TIME_VALUE:" + mainKKS
 
+        #在redis的redis-cli客户端 config set notify-keyspace-events KEA
+
         # 创建pubsub对象，该对象订阅一个频道并侦听新消息：
         pubsub = re.pubsub()
         pubsub.psubscribe({'__keyspace@0__:'+keys_redis})
-        message = pubsub.get_message()
+        message = pubsub.get_message() #将订阅成功的消息提取出来忽略掉
         # {"kks":,"timestamp":,"value":}
 
         # 死循环,不停的接收订阅的通知
