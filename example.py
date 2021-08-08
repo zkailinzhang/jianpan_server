@@ -1,6 +1,5 @@
 from MSET import  *
 from DPC import *
-from test import *
 
 label1=('测试1','测试2','测试3','测试4','测试5','测试6','测试7')
 label2=('测试1','测试2','测试3',)
@@ -9,7 +8,7 @@ train_centers = union_func('test_data21.csv')#通过DPC得到聚类中心，作�
 Temp_MemMat(train_centers,'test_data21.npy')#保存MSET计算用的临时矩阵
 #test_centers = Z_Score('test_data22.csv')#加载测试集
 fault_centers = Z_Score('test_data23.csv')#加载故障集
-sim=np.zeros((fault_centers.shape[0],1)) #np.zeros()返回来一个给定形状和类型的用0填充的数组
+sim=np.zeros((fault_centers.shape[0],1))
 thres=np.zeros((fault_centers.shape[0],1))
 Kest=np.zeros((fault_centers.shape[0],fault_centers.shape[1]))
 for i in range(int(fault_centers.shape[0]/N)):

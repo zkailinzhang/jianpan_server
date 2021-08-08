@@ -39,18 +39,6 @@ def MSETs(memorymat1_name,memorymat2_name,memorymat3_name,Kobs):
             Kest[t] = MSET(memorymat2_name,Kobs[t:t+1,:],'Temp_med.npy')
     return Kest
 
-#基于融合距离的相似度计算
-def Cal_sim(Kobs,Kest):
-    dist_norm = np.zeros((Kobs.shape[0],1))
-    dist_cos = np.zeros((Kobs.shape[0], 1))
-    for i in range(Kobs.shape[0]):
-        dist_norm[i]=np.linalg.norm(Kobs[i, :] - Kest[i, :]) # 欧式距离
-        dist_cos[i]= np.dot(Kobs[i, :], Kest[i, :]) /\
-                     (np.linalg.norm(Kobs[i, :]) * np.linalg.norm(Kest[i, :]))  # dot向量内积，norm向量二范数
-    dist_cos= dist_cos* 0.5 + 0.5  # 余弦距离平移至[0,1]
-    sim = (1 / (1 + dist_norm / dist_cos))  # 相似度公式
-    return sim
-
 #各变量及其误差的可视化
 def pic_vars(label,Kobs,Kest):
     col_num=Kobs.shape[1]
@@ -64,14 +52,12 @@ def pic_vars(label,Kobs,Kest):
         plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
         plt.plot(Kobs[:, i], 'steelblue', label='观测值', lw=1.5)
         plt.plot(Kest[:, i], 'indianred', label='估计值', lw=1.5)
-        #fontsize的值为为数字时可调节字体大小，也可以填写’small’，‘large’，‘medium’，默认为’large’
         plt.legend(loc='upper right', fontsize=13)
         plt.xlabel('样本序号', fontsize=13)
-        #参数verticalalignment的值为’top’, ‘bottom’, ‘center’,‘baseline’，意思为上下平移向figure与axis之间的中间线对齐
         plt.ylabel(label[i], fontsize=13, verticalalignment='bottom')
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
-        plt.subplot(212)#plt.subplot(222)表示将整个图像窗口分为2行1列, 当前位置为2.
+        plt.subplot(212)
         plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
         e[:, i] = (np.abs(Kobs[:, i] - Kest[:, i]) / Kobs[:, i]) * 100
         plt.plot(e[:, i], 'peru', lw=1)  # 偏离度
